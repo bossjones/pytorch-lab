@@ -49,6 +49,16 @@ going_modular = "going_modular/going_modular"
 [tool.ruff]
 line-length = 88
 target-version = "py312"
+# Post-migration hardening scope: lint/format the model subprojects, shared
+# utils, contrib scripts and tests. Out-of-scope legacy paths are excluded
+# here so repo-wide `ruff check .` stays clean; cleaning them is a tracked
+# follow-up (see specs/post-migration-hardening.md).
+extend-exclude = [
+    ".claude",
+    "tasks",
+    "label_pointer.py",
+    "preprocessing_data_loader.py",
+]
 
 [tool.ruff.lint]
 # Start permissive; this is being modernized incrementally.
