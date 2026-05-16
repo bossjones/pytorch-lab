@@ -113,7 +113,20 @@ your shell for ops not yet supported on MPS.
 
 ### Data
 
-Datasets are stored in `scratch/datasets/` (gitignored). Labels are Pascal VOC format CSV files (`bounding_box_list.csv`, `screencropnet/labels_pascal_temp.csv`). Use `make download-dataset` / `make unzip-dataset` at the root to fetch the twitter/facebook/tiktok classification dataset.
+Datasets are stored in `scratch/datasets/` (gitignored). Labels are Pascal VOC format CSV files (`bounding_box_list.csv`, `screencropnet/labels_pascal_temp.csv`). Use `make download-dataset` / `make unzip-dataset` at the root to fetch the twitter/facebook/tiktok **classification** dataset.
+
+For the screencropnet **localization** assets (dataset, checkpoints, sample
+image) use the idempotent PEP 723 fetcher:
+
+```bash
+make fetch-assets                    # dataset + all checkpoints + sample
+make download-localization-dataset   # dataset only
+uv run contrib/fetch_screencropnet_assets.py --weights --sample
+```
+
+Asset URLs/destinations/layout are documented in
+`ai_docs/screencropnet-assets.md` (provenance recovered from the local-only
+`contrib/*.ipynb` reference notebooks, which are git-ignored).
 
 ### Code style
 

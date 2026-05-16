@@ -1,5 +1,6 @@
 .PHONY: setup lock sync env-works env-test test lint format typecheck check \
 	setup-dataset-scratch-env download-dataset unzip-dataset zip-dataset \
+	download-localization-dataset fetch-assets \
 	install-postgres label-studio
 
 # --- Environment (uv) -------------------------------------------------------
@@ -45,6 +46,13 @@ unzip-dataset:
 zip-dataset:
 	bash contrib/zip-dataset.sh
 	ls -ltah ./scratch/datasets/twitter_facebook_tiktok.zip
+
+# Localization (screencropnet) assets. Provenance: ai_docs/screencropnet-assets.md
+download-localization-dataset:
+	uv run contrib/fetch_screencropnet_assets.py --dataset
+
+fetch-assets:
+	uv run contrib/fetch_screencropnet_assets.py --all
 
 install-postgres:
 	brew install postgresql@14
