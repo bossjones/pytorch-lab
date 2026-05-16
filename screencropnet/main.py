@@ -36,7 +36,6 @@ import torchvision
 
 from rich.traceback import install
 
-install(show_locals=True)
 from icecream import ic
 from rich import box, inspect, print
 
@@ -44,7 +43,11 @@ from rich.console import Console
 from rich.table import Table
 from torchvision import datasets, transforms
 
-better_exceptions.hook()
+def _install_exception_hooks() -> None:
+    """Install pretty-traceback hooks. Called from main(), never at import."""
+    install(show_locals=True)
+    better_exceptions.hook()
+
 
 console: Console = Console()
 # ---------------------------------------------------------------------------
@@ -174,9 +177,6 @@ NUM_COR = 4
 
 NUM_WORKERS = os.cpu_count()
 
-
-# SOURCE: https://github.com/pytorch/pytorch/issues/78924
-torch.set_num_threads(1)
 
 MODEL_NAME = "ScreenCropNetV1"
 DATASET_FOLDER_NAME = "twitter_screenshots_localization_dataset"
@@ -1511,6 +1511,9 @@ best_acc1 = 0
 
 
 def main():
+    _install_exception_hooks()
+    # SOURCE: https://github.com/pytorch/pytorch/issues/78924
+    torch.set_num_threads(1)
     args = parser.parse_args()
     ic(args)
 
@@ -2548,8 +2551,6 @@ def pred_and_store(
 
 if __name__ == "__main__":
     import traceback
-
-    better_exceptions.hook()
 
     try:
         main()

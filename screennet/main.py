@@ -41,7 +41,10 @@ from rich.console import Console
 from rich.table import Table
 from torchvision import datasets, transforms
 
-better_exceptions.hook()
+def _install_exception_hooks() -> None:
+    """Install pretty-traceback hooks. Called from main(), never at import."""
+    better_exceptions.hook()
+
 
 console: Console = Console()
 # ---------------------------------------------------------------------------
@@ -126,9 +129,6 @@ import torch.profiler
 import fastai
 from fastai.data.transforms import get_image_files
 import torchvision.transforms.functional as pytorch_transforms_functional
-
-# SOURCE: https://github.com/pytorch/pytorch/issues/78924
-torch.set_num_threads(1)
 
 # SOURCE: https://github.com/pytorch/vision/blob/main/references/classification/train.py
 def _get_cache_path(filepath):
@@ -1201,6 +1201,9 @@ best_acc1 = 0
 
 
 def main():
+    _install_exception_hooks()
+    # SOURCE: https://github.com/pytorch/pytorch/issues/78924
+    torch.set_num_threads(1)
     args = parser.parse_args()
     ic(args)
     # rich.inspect(args)
