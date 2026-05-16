@@ -1,12 +1,13 @@
 import torch
 import torchvision.models as models
 import torch.nn as nn
-import devices
 import argparse
 import timm
 import torchvision.transforms.functional as FT
 import torch.nn.functional as F
-from helpers import find_intersection, find_jaccard_overlap
+
+from screencropnet import devices
+from screencropnet.helpers import find_intersection, find_jaccard_overlap
 
 MODEL_NAMES = sorted(
     name

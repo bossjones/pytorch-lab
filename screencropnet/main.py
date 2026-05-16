@@ -25,16 +25,9 @@ import pandas as pd
 # from rich_dataframe import prettify
 
 
-extra_modules_path_api = pathlib.Path("../going_modular")
-extra_modules_path = os.path.abspath(str(extra_modules_path_api))
-# print(extra_modules_path)
-
-# sys.path.insert(1, extra_modules_path)
-sys.path.append(extra_modules_path)
-sys.path.append("../")
-# import better_exceptions
 import better_exceptions
-import devices  # pylint: disable=import-error
+
+from screencropnet import devices
 import rich
 
 # ---------------------------------------------------------------------------
@@ -147,12 +140,12 @@ from tqdm.notebook import tqdm
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from data_set import ObjLocDataset
 import albumentations as A
-from arch import ObjLocModel
 from enum import IntEnum
 
-from ml_types import ImageNdarrayBGR, ImageNdarrayHWC
+from screencropnet.data_set import ObjLocDataset
+from screencropnet.arch import ObjLocModel
+from screencropnet.ml_types import ImageNdarrayBGR, ImageNdarrayHWC
 
 import torchvision.transforms.functional as FT
 from PIL import Image

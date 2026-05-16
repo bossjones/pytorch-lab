@@ -20,19 +20,9 @@ Show all tasks with::
 ###############################################################################
 
 
-import logging
-from invoke import Collection, Context, Config
-from invoke import task
-from .constants import ROOT_DIR, PROJECT_BIN_DIR, DATA_DIR, SCRIPT_DIR
+from invoke import Collection
 
-from . import local
-from . import ci
-
-from .ml_logger import get_logger  # noqa: E402
-
-LOGGER = get_logger(__name__, provider="Invoke", level=logging.INFO)
-
-LOGGER.disable("invoke")
+from . import ci, local
 
 ns = Collection()
 ns.add_collection(local)

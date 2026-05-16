@@ -1,43 +1,36 @@
-link-conda-env:
-	ln -sf environments-and-requirements/environment-mac.yml environment.yml
+.PHONY: setup lock sync env-works env-test test lint format typecheck check \
+	setup-dataset-scratch-env download-dataset unzip-dataset zip-dataset \
+	install-postgres label-studio
 
-link-conda-env-intel:
-	ln -sf environments-and-requirements/environment-mac-intel.yml environment.yml
+# --- Environment (uv) -------------------------------------------------------
+setup sync:
+	uv sync
 
-conda-update:
-	conda env update
-	conda list --explicit > installed_conda.txt
-	pip freeze > installed_pip.txt
-
-conda-update-prune:
-	conda env update --prune
-	conda list --explicit > installed_conda.txt
-	pip freeze > installed_pip.txt
-
-conda-activate:
-	pyenv activate anaconda3-2022.05
-	conda activate pytorch-lab3
-
-conda-delete:
-	conda env remove -n pytorch-lab3
-
-conda-lock-env:
-	conda env export > env.yml.lock
-	conda list --explicit > spec-file.txt
-
-conda-env-export:
-	conda env export
-	conda list --explicit
-
-conda-history:
-	conda env export --from-history
+lock:
+	uv lock
 
 env-works:
-	python ./contrib/is-mps-available.py
-	python ./contrib/does-matplotlib-work.py
+	uv run python ./contrib/is-mps-available.py
+	uv run python ./contrib/does-matplotlib-work.py
 
 env-test: env-works
 
+# --- Quality ----------------------------------------------------------------
+test:
+	uv run pytest
+
+lint:
+	uv run ruff check .
+
+format:
+	uv run ruff format .
+
+typecheck:
+	uv run pyright
+
+check: lint typecheck test
+
+# --- Dataset ----------------------------------------------------------------
 setup-dataset-scratch-env:
 	bash contrib/setup-dataset-scratch-env.sh
 
@@ -58,4 +51,3 @@ install-postgres:
 
 label-studio:
 	label-studio
-

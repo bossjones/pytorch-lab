@@ -157,8 +157,9 @@ OPENCV_RED = (255, 0, 0)
 
 import torchvision.models as models
 import torch.nn as nn
-import devices
 import argparse
+
+from screencropnet import devices
 import timm
 import matplotlib.patches as patches
 

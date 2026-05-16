@@ -6,8 +6,9 @@ from typing import Optional, Union
 
 import torch
 
-import errors
 from icecream import ic
+
+from screencropnet import errors
 
 
 # has_mps is only available in nightly pytorch (for now) and MasOS 12.3+.

@@ -23,16 +23,9 @@ import pandas as pd
 # from rich_dataframe import prettify
 
 
-extra_modules_path_api = pathlib.Path("../going_modular")
-extra_modules_path = os.path.abspath(str(extra_modules_path_api))
-# print(extra_modules_path)
-
-# sys.path.insert(1, extra_modules_path)
-sys.path.append(extra_modules_path)
-sys.path.append("../")
-# import better_exceptions
 import better_exceptions
-import devices  # pylint: disable=import-error
+
+from screennet import devices
 import rich
 
 # ---------------------------------------------------------------------------
