@@ -17,19 +17,11 @@ MODEL_NAMES = sorted(
 
 
 class ObjLocModel(nn.Module):
-    def __init__(self):
+    def __init__(self, pretrained: bool = True):
         super(ObjLocModel, self).__init__()
-        # super().__init__()
-
-        # device = devices.get_optimal_device(args)
-
-        # weights = models.__dict__[args.model_weights].DEFAULT
-        # auto_transforms = weights.transforms()
-        # model = models.__dict__[args.arch](weights=weights).to(device)
-        # model.name = args.arch
 
         self.backbone = timm.create_model(
-            "efficientnet_b0", pretrained=True, num_classes=4
+            "efficientnet_b0", pretrained=pretrained, num_classes=4
         )
         # self.backbone = model
 

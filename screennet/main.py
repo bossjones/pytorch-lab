@@ -1448,11 +1448,13 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         if os.path.isfile(args.resume):
             print("=> loading checkpoint '{}'".format(args.resume))
             if args.gpu is None:
-                checkpoint = torch.load(args.resume)
+                checkpoint = torch.load(args.resume, weights_only=False)
             elif torch.cuda.is_available():
                 # Map model to be loaded to specified single gpu.
                 loc = "cuda:{}".format(args.gpu)
-                checkpoint = torch.load(args.resume, map_location=loc)
+                checkpoint = torch.load(
+                    args.resume, map_location=loc, weights_only=False
+                )
             args.start_epoch = checkpoint["epoch"]
             best_acc1 = checkpoint["best_acc1"]
             if args.gpu is not None:
@@ -1927,7 +1929,7 @@ def load_model_for_inference(
     save_path: str, device: str, class_names: List[str], args: argparse.Namespace
 ) -> nn.Module:
     model = create_effnetb0_model(device, class_names, args)
-    model.load_state_dict(torch.load(save_path))
+    model.load_state_dict(torch.load(save_path, weights_only=True))
     model.eval()
     print("Model loaded from path {} successfully.".format(save_path))
     # Get the model size in bytes then convert to megabytes
@@ -1941,7 +1943,7 @@ def load_model_for_inference(
 # SOURCE: https://github.com/a-sasikumar/image_caption_errors/blob/d583dc77cfa9938bb15297b3096a959fe6084b66/models/model.py
 def load_model_from_disk(save_path: str, empty_model: nn.Module) -> nn.Module:
     # Loading Model for Inference
-    empty_model.load_state_dict(torch.load(save_path))
+    empty_model.load_state_dict(torch.load(save_path, weights_only=True))
     # Remember that you must call model.eval() to set dropout and batch normalization layers to evaluation mode before running inference. Failing to do this will yield inconsistent inference results.
     empty_model.eval()
     print("Model loaded from path {} successfully.".format(save_path))

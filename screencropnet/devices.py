@@ -14,7 +14,7 @@ from screencropnet import errors
 # has_mps is only available in nightly pytorch (for now) and MasOS 12.3+.
 # check `getattr` and try it for compatibility
 def has_mps() -> bool:
-    if not getattr(torch, "has_mps", False):
+    if not torch.backends.mps.is_available():
         return False
     try:
         torch.zeros(1).to(torch.device("mps"))
@@ -114,7 +114,10 @@ def autocast(disable=False, precision: str = "autocast"):
     if dtype == torch.float32 or precision == "full":
         return contextlib.nullcontext()
 
-    return torch.autocast("cuda")
+    if torch.cuda.is_available():
+        return torch.autocast("cuda")
+    # MPS/CPU: torch.autocast("cuda") only warns and disables itself here.
+    return contextlib.nullcontext()
 
 
 # MPS workaround for https://github.com/pytorch/pytorch/issues/79383
@@ -150,7 +153,7 @@ def mps_check():
             )
 
     else:
-        ic(torch.has_mps)
+        ic(torch.backends.mps.is_available())
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
             x = torch.ones(1, device=mps_device)

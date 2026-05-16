@@ -19,7 +19,6 @@ Show all tasks with::
 # )
 ###############################################################################
 
-
 from invoke import Collection
 
 from . import ci, local
