@@ -28,7 +28,10 @@ def plot_training_loss(
     ax1.plot(
         np.convolve(
             minibatch_loss_list,
-            np.ones(averaging_iterations,) / averaging_iterations,
+            np.ones(
+                averaging_iterations,
+            )
+            / averaging_iterations,
             mode="valid",
         ),
         label="Running Average",
@@ -80,7 +83,6 @@ def plot_accuracy(train_acc_list, valid_acc_list, results_dir):
 def show_examples(model, data_loader, unnormalizer=None, class_dict=None):
 
     for batch_idx, (features, targets) in enumerate(data_loader):
-
         with torch.no_grad():
             features = features
             targets = targets
@@ -110,7 +112,6 @@ def show_examples(model, data_loader, unnormalizer=None, class_dict=None):
             ax.axison = False
 
     else:
-
         for idx, ax in enumerate(axes.ravel()):
             ax.imshow(nhwc_img[idx])
             if class_dict is not None:
@@ -141,7 +142,7 @@ def plot_confusion_matrix(
         raise AssertionError("Both show_absolute and show_normed are False")
     if class_names is not None and len(class_names) != len(conf_mat):
         raise AssertionError(
-            "len(class_names) should be equal to number of" "classes in the dataset"
+            "len(class_names) should be equal to number ofclasses in the dataset"
         )
 
     total_samples = conf_mat.sum(axis=1)[:, np.newaxis]

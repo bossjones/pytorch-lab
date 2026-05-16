@@ -2,7 +2,6 @@
 Trains a PyTorch image classification model using device-agnostic code.
 """
 
-
 import torch
 from torchvision import transforms
 

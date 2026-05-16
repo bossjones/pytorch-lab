@@ -52,9 +52,7 @@ def test_load_checkpoint_returns_full_dict(module: str, tmp_path) -> None:
 
 
 @pytest.mark.parametrize("module", MODULES)
-def test_resume_checkpoint_requires_weights_only_false(
-    module: str, tmp_path
-) -> None:
+def test_resume_checkpoint_requires_weights_only_false(module: str, tmp_path) -> None:
     # Characterization guard: documents the torch constraint load_checkpoint
     # works around. If this ever stops raising, revisit weights_only=False.
     path, _ = _write_checkpoint(tmp_path)
@@ -63,9 +61,7 @@ def test_resume_checkpoint_requires_weights_only_false(
 
 
 @pytest.mark.parametrize("module", MODULES)
-def test_load_checkpoint_gpu_set_but_no_cuda(
-    module: str, tmp_path, mocker
-) -> None:
+def test_load_checkpoint_gpu_set_but_no_cuda(module: str, tmp_path, mocker) -> None:
     mod = importlib.import_module(module)
     mocker.patch("torch.cuda.is_available", return_value=False)
     path, _ = _write_checkpoint(tmp_path)

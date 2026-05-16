@@ -281,6 +281,7 @@ def mean_average_precision(
 # Define functions to download an archived dataset and unpack it
 # SOURCE: https://albumentations.ai/docs/examples/pytorch_classification/#Define-a-function-to-visualize-images-and-their-labels
 
+
 class TqdmUpTo(tqdm):
     def update_to(self, b=1, bsize=1, tsize=None):
         if tsize is not None:
@@ -295,7 +296,13 @@ def download_url(url, filepath):
         print("Filepath already exists. Skipping download.")
         return
 
-    with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=os.path.basename(filepath)) as t:
+    with TqdmUpTo(
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+        miniters=1,
+        desc=os.path.basename(filepath),
+    ) as t:
         urlretrieve(url, filename=filepath, reporthook=t.update_to, data=None)
         t.total = t.n
 

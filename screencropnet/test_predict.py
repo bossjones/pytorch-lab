@@ -29,9 +29,9 @@ better_exceptions.hook()
 
 
 assert int(torch.__version__.split(".")[1]) >= 12, "torch version should be 1.12+"
-assert (
-    int(torchvision.__version__.split(".")[1]) >= 13
-), "torchvision version should be 0.13+"
+assert int(torchvision.__version__.split(".")[1]) >= 13, (
+    "torchvision version should be 0.13+"
+)
 # print(f"torch version: {torch.__version__}")
 # print(f"torchvision version: {torchvision.__version__}")
 # ---------------------------------------------------------------------------
@@ -46,9 +46,9 @@ from torch import nn
 # breakpoint()
 # from going_modular import data_setup, engine, utils  # pylint: disable=no-name-in-module
 
-assert (
-    int(mlxtend.__version__.split(".")[1]) >= 19
-), "mlxtend verison should be 0.19.0 or higher"
+assert int(mlxtend.__version__.split(".")[1]) >= 19, (
+    "mlxtend verison should be 0.19.0 or higher"
+)
 
 import os
 
@@ -162,7 +162,6 @@ def get_bbox(bboxes, col, color="white", bbox_format="pascal_voc"):
 
 
 if __name__ == "__main__":
-
     try:
         IMG_SIZE = 140
         # main()
@@ -219,7 +218,6 @@ if __name__ == "__main__":
         ax[0].imshow(img)
         plt.show()
     except Exception as ex:
-
         print(str(ex))
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)

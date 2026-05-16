@@ -125,7 +125,6 @@ try:
     # display that image
     plt.show()
 except Exception as ex:
-
     print(str(ex))
     exc_type, exc_value, exc_traceback = sys.exc_info()
     tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)

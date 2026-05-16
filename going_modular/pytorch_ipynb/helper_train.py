@@ -30,10 +30,8 @@ def train_classifier_simple_v1(
 
     start_time = time.time()
     for epoch in range(num_epochs):
-
         model.train()
         for batch_idx, (features, targets) in enumerate(train_loader):
-
             features = features.to(device)
             targets = targets.to(device)
 
@@ -62,7 +60,6 @@ def train_classifier_simple_v1(
             model.eval()
 
             with torch.set_grad_enabled(False):  # save memory during inference
-
                 train_acc = compute_accuracy(model, train_loader, device)
                 train_loss = compute_epoch_loss(model, train_loader, device)
                 print(
@@ -109,10 +106,8 @@ def train_classifier_simple_v2(
     best_valid_acc, best_epoch = -float("inf"), 0
 
     for epoch in range(num_epochs):
-
         model.train()
         for batch_idx, (features, targets) in enumerate(train_loader):
-
             features = features.to(device)
             targets = targets.to(device)
 
@@ -130,7 +125,7 @@ def train_classifier_simple_v2(
             minibatch_loss_list.append(loss.item())
             if not batch_idx % logging_interval:
                 print(
-                    f"Epoch: {epoch+1:03d}/{num_epochs:03d} "
+                    f"Epoch: {epoch + 1:03d}/{num_epochs:03d} "
                     f"| Batch {batch_idx:04d}/{len(train_loader):04d} "
                     f"| Loss: {loss:.4f}"
                 )
@@ -151,18 +146,17 @@ def train_classifier_simple_v2(
                     torch.save(model.state_dict(), best_model_save_path)
 
             print(
-                f"Epoch: {epoch+1:03d}/{num_epochs:03d} "
-                f"| Train: {train_acc :.2f}% "
-                f"| Validation: {valid_acc :.2f}% "
+                f"Epoch: {epoch + 1:03d}/{num_epochs:03d} "
+                f"| Train: {train_acc:.2f}% "
+                f"| Validation: {valid_acc:.2f}% "
                 f"| Best Validation "
-                f"(Ep. {best_epoch:03d}): {best_valid_acc :.2f}%"
+                f"(Ep. {best_epoch:03d}): {best_valid_acc:.2f}%"
             )
 
         elapsed = (time.time() - start_time) / 60
         print(f"Time elapsed: {elapsed:.2f} min")
 
         if scheduler is not None:
-
             if scheduler_on == "valid_acc":
                 scheduler.step(valid_acc_list[-1])
             elif scheduler_on == "minibatch_loss":
@@ -174,6 +168,6 @@ def train_classifier_simple_v2(
     print(f"Total Training Time: {elapsed:.2f} min")
 
     test_acc = compute_accuracy(model, test_loader, device=device)
-    print(f"Test accuracy {test_acc :.2f}%")
+    print(f"Test accuracy {test_acc:.2f}%")
 
     return minibatch_loss_list, train_acc_list, valid_acc_list

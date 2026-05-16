@@ -10,7 +10,6 @@ from screencropnet.ml_types import ImageNdarrayHWC, TensorCHW
 
 
 class ObjLocDataset(torch.utils.data.Dataset):
-
     """Localization Dataset."""
 
     def __init__(self, df: pd.DataFrame, transform=None, root_dir: str = ""):

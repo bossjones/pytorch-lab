@@ -48,9 +48,9 @@ console: Console = Console()
 
 
 assert int(torch.__version__.split(".")[1]) >= 12, "torch version should be 1.12+"
-assert (
-    int(torchvision.__version__.split(".")[1]) >= 13
-), "torchvision version should be 0.13+"
+assert int(torchvision.__version__.split(".")[1]) >= 13, (
+    "torchvision version should be 0.13+"
+)
 # print(f"torch version: {torch.__version__}")
 # print(f"torchvision version: {torchvision.__version__}")
 # ---------------------------------------------------------------------------
@@ -71,9 +71,9 @@ from going_modular import engine, utils  # pylint: disable=no-name-in-module
 
 
 # print(f"mlxtend version: {mlxtend.__version__}")
-assert (
-    int(mlxtend.__version__.split(".")[1]) >= 19
-), "mlxtend verison should be 0.19.0 or higher"
+assert int(mlxtend.__version__.split(".")[1]) >= 19, (
+    "mlxtend verison should be 0.19.0 or higher"
+)
 
 import argparse
 import os
@@ -155,6 +155,7 @@ CONFIG_IMAGE_SIZE = (224, 224)
 OPENCV_GREEN = (0, 255, 0)
 OPENCV_RED = (255, 0, 0)
 
+
 # --------------------------------------------------------------------------------
 # SOURCE FOR THIS ENTIRE BLOCK
 # SOURCE: https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection/blob/master/utils.py
@@ -165,7 +166,8 @@ def xy_to_cxcy(xy):
     :return: bounding boxes in center-size coordinates, a tensor of size (n_boxes, 4)
     """
     return torch.cat(
-        [(xy[:, 2:] + xy[:, :2]) / 2, xy[:, 2:] - xy[:, :2]], 1  # c_x, c_y
+        [(xy[:, 2:] + xy[:, :2]) / 2, xy[:, 2:] - xy[:, :2]],
+        1,  # c_x, c_y
     )  # w, h
 
 
@@ -315,11 +317,12 @@ def display_image_grid(
     plt.tight_layout()
     plt.show()
 
+
 def get_pixel_rgb(image_pil: Image):
     r, g, b = image_pil.getpixel((1, 1))
-    ic(r,g,b)
+    ic(r, g, b)
 
-    if (r,g,b) == (255, 255, 255):
+    if (r, g, b) == (255, 255, 255):
         color = "white"
     else:
         color = "darkmode"
@@ -824,7 +827,7 @@ def show_confusion_matrix_helper(
     fig, ax = plot_confusion_matrix(
         conf_mat=cmat,
         class_names=class_names,
-        norm_colormap=matplotlib.colors.LogNorm()
+        norm_colormap=matplotlib.colors.LogNorm(),
         # normed colormaps highlight the off-diagonals
         # for high-accuracy models better
     )
@@ -843,7 +846,6 @@ def compute_accuracy(
     with torch.no_grad():
         correct_pred, num_examples = 0, 0
         for i, (features, targets) in enumerate(data_loader):
-
             features = features.to(device)
             targets = targets.to(device)
 
@@ -882,9 +884,7 @@ def compute_confusion_matrix(
 
     all_targets, all_predictions = [], []
     with torch.no_grad():
-
         for i, (features, targets) in enumerate(data_loader):
-
             features = features.to(device)
             targets = targets
             logits = model(features)
@@ -941,7 +941,7 @@ def run_validate(
 
     # End the timer and print out how long it took
     end_time = timer()
-    print(f"[INFO] Total testing time: {end_time-start_time:.3f} seconds")
+    print(f"[INFO] Total testing time: {end_time - start_time:.3f} seconds")
     ic(test_loss)
     ic(test_acc)
 
@@ -1624,7 +1624,6 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
             50000, (3, 224, 224), 1000, transforms.ToTensor()
         )
     else:
-
         df_dataset = pd.read_csv(CSV_FILE)
 
         train_df, valid_df = train_test_split(
@@ -1856,7 +1855,6 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
         images_filepaths = []
         if is_file(path_to_image_from_cli):
-
             images_filepaths.append(path_to_image_from_cli)
 
             cropped_paths = handle_autocrop(
@@ -2059,6 +2057,7 @@ def get_random_images_from_dataset(
 # y_preds = []
 # y_pred_tensor = None
 
+
 # 1. Take in a trained model, class names, image path, image size, a transform and target device
 def pred_and_plot_image(
     model: torch.nn.Module,
@@ -2202,9 +2201,7 @@ def load_model_for_inference(
 ) -> nn.Module:
     model = ObjLocModel()
     model.name = "ObjLocModelV1"
-    model.load_state_dict(
-        torch.load(save_path, map_location=device, weights_only=True)
-    )
+    model.load_state_dict(torch.load(save_path, map_location=device, weights_only=True))
     model.eval()
     print(f"Model loaded from path {save_path} successfully.")
     # Get the model size in bytes then convert to megabytes
@@ -2318,9 +2315,7 @@ def save_checkpoint(state, filename="saved_checkpoint.pth.tar"):
 def load_checkpoint(resume_path: str, gpu: int | None = None) -> dict:
     """Load a full training checkpoint (trusted local file, weights_only=False)."""
     if gpu is not None and torch.cuda.is_available():
-        return torch.load(
-            resume_path, map_location=f"cuda:{gpu}", weights_only=False
-        )
+        return torch.load(resume_path, map_location=f"cuda:{gpu}", weights_only=False)
     return torch.load(resume_path, weights_only=False)
 
 
@@ -2368,7 +2363,6 @@ def pred_and_store(
 
     # 3. Loop through target paths
     for path in tqdm(paths):
-
         # 4. Create empty dictionary to store prediction information for each sample
         pred_dict = {}
 
@@ -2521,7 +2515,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as ex:
-
         print(str(ex))
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)

@@ -1,6 +1,7 @@
 """
 Contains functions for training and testing a PyTorch model.
 """
+
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -20,17 +21,17 @@ def calculate_IoU(bb1, bb2):
     # https://github.com/Hulkido/RCNN/blob/master/RCNN.ipynb
 
     (
-                bb1_xmin,
-                bb1_ymin,
-                bb1_xmax,
-                bb1_ymax,
+        bb1_xmin,
+        bb1_ymin,
+        bb1_xmax,
+        bb1_ymax,
     ) = bb1
 
     (
-                bb2_xmin,
-                bb2_ymin,
-                bb2_xmax,
-                bb2_ymax,
+        bb2_xmin,
+        bb2_ymin,
+        bb2_xmax,
+        bb2_ymax,
     ) = bb2
 
     x_left = max(bb1_xmin, bb2_xmin)
@@ -87,22 +88,24 @@ def train_step(
     # Setup train loss and train accuracy values
     train_loss, train_acc = 0, 0
 
-    with torch.profiler.profile(
-        activities=[
-            torch.profiler.ProfilerActivity.CPU,
-            torch.profiler.ProfilerActivity.CUDA,
-        ],
-        schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
-        on_trace_ready=torch.profiler.tensorboard_trace_handler(
-            "./runs/profiler", worker_name="worker0"
-        ),
-        # save information about operator's input shapes.
-        record_shapes=True,
-        #  track tensor memory allocation/deallocation.
-        profile_memory=True,  # This will take 1 to 2 minutes. Setting it to False could greatly speedup.
-        # record source information (file and line number) for the ops.
-        with_stack=True,
-    ) as prof:
+    with (
+        torch.profiler.profile(
+            activities=[
+                torch.profiler.ProfilerActivity.CPU,
+                torch.profiler.ProfilerActivity.CUDA,
+            ],
+            schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(
+                "./runs/profiler", worker_name="worker0"
+            ),
+            # save information about operator's input shapes.
+            record_shapes=True,
+            #  track tensor memory allocation/deallocation.
+            profile_memory=True,  # This will take 1 to 2 minutes. Setting it to False could greatly speedup.
+            # record source information (file and line number) for the ops.
+            with_stack=True,
+        ) as prof
+    ):
         # Loop through data loader data batches
         for batch, (X, y) in enumerate(dataloader):
             # Send data to target device
@@ -292,7 +295,7 @@ def train(
 
         # Print out what's happening
         print(
-            f"Epoch: {epoch+1} | "
+            f"Epoch: {epoch + 1} | "
             f"train_loss: {train_loss:.4f} | "
             f"train_acc: {train_acc:.4f} | "
             f"test_loss: {test_loss:.4f} | "
@@ -345,26 +348,25 @@ def train_localization_fn(
     # Put model in train mode
     model.train()  # Dropout On
 
-
-    with torch.profiler.profile(
-        activities=[
-            torch.profiler.ProfilerActivity.CPU,
-            torch.profiler.ProfilerActivity.CUDA,
-        ],
-        schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
-        on_trace_ready=torch.profiler.tensorboard_trace_handler(
-            "./runs/profiler", worker_name="cropworker0"
-        ),
-        # save information about operator's input shapes.
-        record_shapes=True,
-        #  track tensor memory allocation/deallocation.
-        profile_memory=True,  # This will take 1 to 2 minutes. Setting it to False could greatly speedup.
-        # record source information (file and line number) for the ops.
-        with_stack=True,
-    ) as prof:
-
+    with (
+        torch.profiler.profile(
+            activities=[
+                torch.profiler.ProfilerActivity.CPU,
+                torch.profiler.ProfilerActivity.CUDA,
+            ],
+            schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(
+                "./runs/profiler", worker_name="cropworker0"
+            ),
+            # save information about operator's input shapes.
+            record_shapes=True,
+            #  track tensor memory allocation/deallocation.
+            profile_memory=True,  # This will take 1 to 2 minutes. Setting it to False could greatly speedup.
+            # record source information (file and line number) for the ops.
+            with_stack=True,
+        ) as prof
+    ):
         for data in tqdm(dataloader):
-
             # Send data to target device
             images, gt_bboxes = data
             images, gt_bboxes = (
@@ -409,7 +411,6 @@ def eval_localization_fn(
     # with torch.no_grad():
     with torch.inference_mode():
         for data in tqdm(dataloader):
-
             images, gt_bboxes = data
             images, gt_bboxes = (
                 images.to(device, non_blocking=True),
@@ -452,7 +453,6 @@ def train_localization(
     model.to(device)
 
     for epoch in tqdm(range(epochs)):
-
         print(
             f"[INFO] train_step for model {model.__class__.__name__} on device '{device}' epoch={epoch}..."
         )
@@ -467,9 +467,9 @@ def train_localization(
             print("WEIGHTS-ARE-SAVED")
             best_valid_loss = valid_loss
 
-        print(f"Epoch : {epoch + 1} train loss : {train_loss} valid loss : {valid_loss}")
-
-
+        print(
+            f"Epoch : {epoch + 1} train loss : {train_loss} valid loss : {valid_loss}"
+        )
 
         ### New: Use the writer parameter to track experiments ###
         # See if there's a writer, if so, log to it
