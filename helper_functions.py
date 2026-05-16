@@ -175,7 +175,7 @@ import torchvision
 def pred_and_plot_image(
     model: torch.nn.Module,
     image_path: str,
-    class_names: List[str] = None,
+    class_names: list[str] = None,
     transform=None,
     device: torch.device = "cuda" if torch.cuda.is_available() else "cpu",
 ):

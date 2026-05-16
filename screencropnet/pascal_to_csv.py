@@ -53,7 +53,7 @@ def main():
     for ds in datasets:
         image_path = os.path.join("/Users/malcolm/Downloads", ds, "annotations")
         xml_df = xml_to_csv(image_path)
-        xml_df.to_csv("labels2_{}.csv".format(ds), index=None)
+        xml_df.to_csv(f"labels2_{ds}.csv", index=None)
         print("Successfully converted xml to csv.")
 
 

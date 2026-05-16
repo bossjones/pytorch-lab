@@ -60,7 +60,7 @@ def train_step(
     loss_fn: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Trains a PyTorch model for a single epoch.
 
     Turns a target PyTorch model to training mode and then
@@ -144,7 +144,7 @@ def test_step(
     dataloader: torch.utils.data.DataLoader,
     loss_fn: torch.nn.Module,
     device: torch.device,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Tests a PyTorch model for a single epoch.
 
     Turns a target PyTorch model to "eval" mode and then performs
@@ -205,7 +205,7 @@ def train(
     epochs: int,
     device: torch.device,
     writer: SummaryWriter,  # new parameter to take in a writer
-) -> Dict[str, List]:
+) -> dict[str, list]:
     """Trains and tests a PyTorch model.
 
     Passes a target PyTorch models through train_step() and test_step()

@@ -117,7 +117,7 @@ MODEL_NAMES = sorted(
 
 class ObjLocModel(nn.Module):
     def __init__(self):
-        super(ObjLocModel, self).__init__()
+        super().__init__()
 
         self.backbone = timm.create_model(
             "efficientnet_b0", pretrained=True, num_classes=4
@@ -224,12 +224,12 @@ if __name__ == "__main__":
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)
         traceback_str = "".join(tb.format_exception_only())
-        print("Error Class: {}".format(str(ex.__class__)))
+        print(f"Error Class: {str(ex.__class__)}")
 
         output = "[{}] {}: {}".format("UNEXPECTED", type(ex).__name__, ex)
         print(output)
-        print("exc_type: {}".format(exc_type))
-        print("exc_value: {}".format(exc_value))
+        print(f"exc_type: {exc_type}")
+        print(f"exc_value: {exc_value}")
         traceback.print_tb(exc_traceback)
         bpdb.pm()
         # raise

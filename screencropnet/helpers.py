@@ -224,8 +224,8 @@ def mean_average_precision(
 
         # sort by box probabilities which is index 2
         detections.sort(key=lambda x: x[2], reverse=True)
-        TP = torch.zeros((len(detections)))
-        FP = torch.zeros((len(detections)))
+        TP = torch.zeros(len(detections))
+        FP = torch.zeros(len(detections))
         total_true_bboxes = len(ground_truths)
 
         # if none exists for this class then we safely skip

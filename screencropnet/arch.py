@@ -13,7 +13,7 @@ MODEL_NAMES = sorted(
 
 class ObjLocModel(nn.Module):
     def __init__(self, pretrained: bool = True):
-        super(ObjLocModel, self).__init__()
+        super().__init__()
 
         self.backbone = timm.create_model(
             "efficientnet_b0", pretrained=pretrained, num_classes=4

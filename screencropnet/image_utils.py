@@ -26,7 +26,7 @@ def safe_read_image(path: str):
 
 
 def load_and_transform_image_for_prediction(
-    path: str, transform: Union[A.Compose, NoneType] = None, img_size=140
+    path: str, transform: A.Compose | NoneType = None, img_size=140
 ):
     img = safe_read_image(path)
 

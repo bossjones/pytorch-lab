@@ -26,7 +26,7 @@ def create_dataloaders(
     batch_size: int,
     num_workers: int = NUM_WORKERS,
     pin_memory: bool = False,
-) -> Tuple[DataLoader, DataLoader, List[str]]:
+) -> tuple[DataLoader, DataLoader, list[str]]:
     """Creates training and testing DataLoaders.
 
   Takes in a training directory and testing directory path and turns

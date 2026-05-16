@@ -25,7 +25,7 @@ def df_to_table(
     pandas_dataframe: pd.DataFrame,
     rich_table: Table,
     show_index: bool = True,
-    index_name: Optional[str] = None,
+    index_name: str | None = None,
 ) -> Table:
     """Convert a pandas.DataFrame obj into a rich.Table obj.
     Args:
@@ -130,11 +130,11 @@ except Exception as ex:
     exc_type, exc_value, exc_traceback = sys.exc_info()
     tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)
     traceback_str = "".join(tb.format_exception_only())
-    print("Error Class: {}".format(str(ex.__class__)))
+    print(f"Error Class: {str(ex.__class__)}")
 
     output = "[{}] {}: {}".format("UNEXPECTED", type(ex).__name__, ex)
     print(output)
-    print("exc_type: {}".format(exc_type))
-    print("exc_value: {}".format(exc_value))
+    print(f"exc_type: {exc_type}")
+    print(f"exc_value: {exc_value}")
     traceback.print_tb(exc_traceback)
     bpdb.pm()

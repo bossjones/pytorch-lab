@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchvision import datasets, transforms
 
 
-class UnNormalize(object):
+class UnNormalize:
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std

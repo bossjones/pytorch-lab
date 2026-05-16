@@ -32,7 +32,7 @@ def extract_device_id(args, name):
 def get_optimal_device(args: argparse.Namespace):
     if torch.cuda.is_available():
         # from modules import shared
-        device_id: Optional[Union[int, None]]
+        device_id: int | None | None
         device_id = args.gpu
 
         if device_id is not None:

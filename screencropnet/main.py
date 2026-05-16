@@ -279,7 +279,7 @@ def resize_image_and_bbox(
 
 
 def display_image_grid(
-    images_filepaths: List[str], cols=5, model=None, device=None, args=None
+    images_filepaths: list[str], cols=5, model=None, device=None, args=None
 ):
     rows = len(images_filepaths) // cols
     # figure, ax = plt.subplots(nrows=rows, ncols=cols, figsize=(12, 6))
@@ -357,7 +357,7 @@ def resize_and_pillarbox(image_pil: Image, width: int, height: int, background="
 
 
 def handle_autocrop(
-    images_filepaths: List[str],
+    images_filepaths: list[str],
     cols=5,
     model=None,
     device=None,
@@ -783,7 +783,7 @@ def download_and_predict(
     url: str,
     model: torch.nn.Module,
     data_path: pathlib.PosixPath,
-    class_names: List[str],
+    class_names: list[str],
     device: torch.device = None,
 ):
     # Download custom image
@@ -816,7 +816,7 @@ def download_and_predict(
 
 def show_confusion_matrix_helper(
     cmat: np.ndarray,
-    class_names: List[str],
+    class_names: list[str],
     to_disk: bool = True,
     fname: str = "plot.png",
 ):
@@ -915,7 +915,7 @@ def run_confusion_matrix(
     model: torch.nn.Module,
     test_dataloader: torch.utils.data.DataLoader,
     device: torch.device,
-    class_names: List[str],
+    class_names: list[str],
 ):
 
     cmat = compute_confusion_matrix(model, test_dataloader, device)
@@ -1085,7 +1085,7 @@ def write_training_results_to_csv(
     )
 
 
-def write_predict_results_to_csv(pred_dicts: List[Dict], args: argparse.Namespace):
+def write_predict_results_to_csv(pred_dicts: list[dict], args: argparse.Namespace):
     # Create results dict
     pred_df = pd.DataFrame(pred_dicts)
     pred_df.drop(columns=["class_name", "correct"], inplace=True)
@@ -1101,7 +1101,7 @@ def df_to_table(
     pandas_dataframe: pd.DataFrame,
     rich_table: Table,
     show_index: bool = True,
-    index_name: Optional[str] = None,
+    index_name: str | None = None,
 ) -> Table:
     """Convert a pandas.DataFrame obj into a rich.Table obj.
     Args:
@@ -1229,9 +1229,9 @@ def get_model_summary(
     model: torch.nn.Module,
     input_size: tuple = (32, 3, 224, 224),
     verbose: int = 0,
-    col_names: List[str] = ["input_size", "output_size", "num_params", "trainable"],
+    col_names: list[str] = ["input_size", "output_size", "num_params", "trainable"],
     col_width: int = 20,
-    row_settings: List[str] = ["var_names"],
+    row_settings: list[str] = ["var_names"],
 ):
     print(f"Getting model summary for -> {model}")
     # # Do a summary *after* freezing the features and changing the output classifier layer (uncomment for actual output)
@@ -1525,7 +1525,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     y_pred_tensor = None
 
     if args.gpu is not None:
-        print("Use GPU: {} for training".format(args.gpu))
+        print(f"Use GPU: {args.gpu} for training")
 
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:
@@ -1542,7 +1542,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         )
     # create model
     if args.pretrained:
-        ic("=> using pre-trained model '{}'".format(args.arch))
+        ic(f"=> using pre-trained model '{args.arch}'")
         # breakpoint()
         device = devices.get_optimal_device(args)
 
@@ -1553,7 +1553,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         model.name = "ObjLocModelV1"
         model.to(device)
     else:
-        ic("=> creating model '{}'".format(args.arch))
+        ic(f"=> creating model '{args.arch}'")
         device = devices.get_optimal_device(args)
         model = ObjLocModel()
         model.name = "ObjLocModelV1"
@@ -1605,7 +1605,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
     if torch.cuda.is_available():
         if args.gpu:
-            device = torch.device("cuda:{}".format(args.gpu))
+            device = torch.device(f"cuda:{args.gpu}")
         else:
             device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -1701,14 +1701,14 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
             trainset, batch_size=BATCH_SIZE, shuffle=False
         )
 
-        print("Total no. batches in trainloader : {}".format(len(trainloader)))
-        print("Total no. batches in validloader : {}".format(len(validloader)))
+        print(f"Total no. batches in trainloader : {len(trainloader)}")
+        print(f"Total no. batches in validloader : {len(validloader)}")
 
         for images, bboxes in trainloader:
             break
 
-        print("Shape of one batch images : {}".format(images.shape))
-        print("Shape of one batch bboxes : {}".format(bboxes.shape))
+        print(f"Shape of one batch images : {images.shape}")
+        print(f"Shape of one batch bboxes : {bboxes.shape}")
 
     ic(next(model.parameters()).device)
 
@@ -1722,7 +1722,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
+            print(f"=> loading checkpoint '{args.resume}'")
             checkpoint = load_checkpoint(args.resume, args.gpu)
             args.start_epoch = checkpoint["epoch"]
             best_acc1 = checkpoint["best_acc1"]
@@ -1738,7 +1738,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
                 )
             )
         else:
-            print("=> no checkpoint found at '{}'".format(args.resume))
+            print(f"=> no checkpoint found at '{args.resume}'")
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
@@ -1923,7 +1923,7 @@ class Summary(Enum):
     COUNT = 3
 
 
-class AverageMeter(object):
+class AverageMeter:
     """Computes and stores the average and current value"""
 
     def __init__(self, name, fmt=":f", summary_type=Summary.AVERAGE):
@@ -1976,7 +1976,7 @@ class AverageMeter(object):
         return fmtstr.format(**self.__dict__)
 
 
-class ProgressMeter(object):
+class ProgressMeter:
     def __init__(self, num_batches, meters, prefix=""):
         self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
         self.meters = meters
@@ -2023,10 +2023,10 @@ def accuracy(output: torch.Tensor, target: torch.Tensor, topk=(1,)):
 def get_random_images_from_dataset(
     model: torch.nn.Module,
     test_dir: pathlib.PosixPath,
-    class_names: List[str],
+    class_names: list[str],
     num_images_to_plot: int = 3,
     device: torch.device = None,
-    y_preds: List[torch.Tensor] = [],
+    y_preds: list[torch.Tensor] = [],
     y_pred_tensor: torch.Tensor = None,
 ):
 
@@ -2063,11 +2063,11 @@ def get_random_images_from_dataset(
 def pred_and_plot_image(
     model: torch.nn.Module,
     image_path: str,
-    class_names: List[str],
-    image_size: Tuple[int, int] = (224, 224),
+    class_names: list[str],
+    image_size: tuple[int, int] = (224, 224),
     transform: torchvision.transforms = None,
     device: torch.device = None,
-    y_preds: List[torch.Tensor] = [],
+    y_preds: list[torch.Tensor] = [],
     y_pred_tensor: torch.Tensor = None,
 ):
 
@@ -2134,7 +2134,7 @@ def pred_and_plot_image(
 
 
 # wrapper function of common code
-def run_save_model_for_inference(model: torch.nn.Module) -> Tuple[pathlib.PosixPath]:
+def run_save_model_for_inference(model: torch.nn.Module) -> tuple[pathlib.PosixPath]:
     """Save model to disk
 
     Args:
@@ -2192,7 +2192,7 @@ def save_model_to_disk(my_model_name: str, model: torch.nn.Module):
         obj=model.state_dict(),  # only saving the state_dict() only saves the learned parameters
         f=MODEL_SAVE_PATH,
     )
-    print("Model saved to path {} successfully.".format(MODEL_SAVE_PATH))
+    print(f"Model saved to path {MODEL_SAVE_PATH} successfully.")
     return MODEL_SAVE_PATH
 
 
@@ -2206,7 +2206,7 @@ def load_model_for_inference(
         torch.load(save_path, map_location=device, weights_only=True)
     )
     model.eval()
-    print("Model loaded from path {} successfully.".format(save_path))
+    print(f"Model loaded from path {save_path} successfully.")
     # Get the model size in bytes then convert to megabytes
     model_size = Path(save_path).stat().st_size // (1024 * 1024)
     print(f"{save_path} | feature extractor model size: {model_size} MB")
@@ -2221,7 +2221,7 @@ def load_model_from_disk(save_path: str, empty_model: nn.Module) -> nn.Module:
     empty_model.load_state_dict(torch.load(save_path, weights_only=True))
     # Remember that you must call model.eval() to set dropout and batch normalization layers to evaluation mode before running inference. Failing to do this will yield inconsistent inference results.
     empty_model.eval()
-    print("Model loaded from path {} successfully.".format(save_path))
+    print(f"Model loaded from path {save_path} successfully.")
     return empty_model
 
 
@@ -2230,7 +2230,7 @@ def plot_image_with_predicted_label(
     img: Image = None,
     target_image_pred_label: torch.Tensor = None,
     target_image_pred_probs: torch.Tensor = None,
-    class_names: List[str] = None,
+    class_names: list[str] = None,
     fname: str = "plot.png",
 ):
     # 10. Plot image with predicted label and probability
@@ -2351,12 +2351,12 @@ def print_train_time(start, end, device=None, machine=None):
 # SOURCE: https://www.learnpytorch.io/09_pytorch_model_deployment/
 # 1. Create a function to return a list of dictionaries with sample, truth label, prediction, prediction probability and prediction time
 def pred_and_store(
-    paths: List[pathlib.Path],
+    paths: list[pathlib.Path],
     model: torch.nn.Module,
     # transform: torchvision.transforms,
     # class_names: List[str],
     device: torch.device = "",
-) -> List[Dict]:
+) -> list[dict]:
 
     ic(paths)
     # ic(model.name)
@@ -2526,11 +2526,11 @@ if __name__ == "__main__":
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)
         traceback_str = "".join(tb.format_exception_only())
-        print("Error Class: {}".format(str(ex.__class__)))
+        print(f"Error Class: {str(ex.__class__)}")
 
         output = "[{}] {}: {}".format("UNEXPECTED", type(ex).__name__, ex)
         print(output)
-        print("exc_type: {}".format(exc_type))
-        print("exc_value: {}".format(exc_value))
+        print(f"exc_type: {exc_type}")
+        print(f"exc_value: {exc_value}")
         traceback.print_tb(exc_traceback)
         bpdb.pm()
