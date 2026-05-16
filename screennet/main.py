@@ -1236,9 +1236,6 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     global best_acc1
     args.gpu = gpu
 
-    y_preds = []
-    y_pred_tensor = None
-
     if args.gpu is not None:
         print(f"Use GPU: {args.gpu} for training")
 
@@ -1330,12 +1327,8 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     # Data loading code
     if args.dummy:
         print("=> Dummy data is used!")
-        train_dataset = datasets.FakeData(
-            1281167, (3, 224, 224), 1000, transforms.ToTensor()
-        )
-        val_dataset = datasets.FakeData(
-            50000, (3, 224, 224), 1000, transforms.ToTensor()
-        )
+        datasets.FakeData(1281167, (3, 224, 224), 1000, transforms.ToTensor())
+        datasets.FakeData(50000, (3, 224, 224), 1000, transforms.ToTensor())
     else:
         # Setup path to data folder
         data_path = Path(args.data)
@@ -1357,12 +1350,10 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
         # get datasets for confusion matrix
         # Use ImageFolder to create dataset(s)
-        train_dataset = train_data = datasets.ImageFolder(
-            train_dir, transform=auto_transforms
-        )
-        val_dataset = test_data = datasets.ImageFolder(
-            test_dir, transform=auto_transforms
-        )
+        # Datasets are constructed for their directory-scan side effect;
+        # the sampler/DataLoader wiring that consumed them is dead/removed.
+        _ = datasets.ImageFolder(train_dir, transform=auto_transforms)
+        _ = datasets.ImageFolder(test_dir, transform=auto_transforms)
 
     # -----------------------------
     # BOSSNEW
@@ -1448,15 +1439,6 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
             )
         else:
             print(f"=> no checkpoint found at '{args.resume}'")
-
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        val_sampler = torch.utils.data.distributed.DistributedSampler(
-            val_dataset, shuffle=False, drop_last=True
-        )
-    else:
-        train_sampler = None
-        val_sampler = None
 
     if args.info:
         info(args, dataset_root_dir=image_path)
@@ -1823,7 +1805,7 @@ def pred_and_plot_image(
     ic(target_image_pred_probs)
     y_preds.append(target_image_pred_probs.cpu())
     # boss: Concatenate list of predictions into a tensor
-    y_pred_tensor = torch.cat(y_preds)
+    torch.cat(y_preds)
 
     # 9. Convert prediction probabilities -> prediction labels
     target_image_pred_label = torch.argmax(target_image_pred_probs, dim=1)

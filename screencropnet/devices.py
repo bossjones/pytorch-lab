@@ -163,8 +163,8 @@ def mps_check():
         # Or
         x = torch.ones(5, device="mps")
 
-        # Any operation happens on the GPU
-        y = x * 2
+        # Any operation happens on the GPU (exercises the MPS device)
+        _ = x * 2
 
 
 # SOURCE: https://github.com/pytorch/pytorch/issues/77988

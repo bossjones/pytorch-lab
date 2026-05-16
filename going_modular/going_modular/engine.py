@@ -402,9 +402,6 @@ def eval_localization_fn(
     model.eval()
 
     # Lists to store detected and true boxes, labels, scores
-    det_boxes = list()  # detected bounding boxes
-    det_scores = list()  # detected scores
-    true_boxes = list()  # ground_truth bounding boxes
 
     # with torch.no_grad():
     with torch.inference_mode():

@@ -278,7 +278,6 @@ def display_image_grid(
 
         starting_point_fullsize = pt1_fullsize
         end_point_fullsize = pt2_fullsize
-        color = OPENCV_RED
         thickness = 2
 
         out_img = cv2.rectangle(
@@ -947,7 +946,7 @@ def run_train(
     ic(dataloader_name)
 
     # Setup training and save the results
-    results = engine.train_localization(
+    engine.train_localization(
         model=model,
         trainloader=trainloader,
         validloader=validloader,
@@ -968,16 +967,12 @@ def run_train(
     machine = f"{socket.gethostname()}"
 
     # Print out timer and results
-    total_train_time = print_train_time(
-        start=start_time, end=end_time, device=device, machine=machine
-    )
+    print_train_time(start=start_time, end=end_time, device=device, machine=machine)
 
     # 10. Save the model to file so we can get back the best model
     save_filepath = f"{MODEL_NAME}_{model.name}_{dataloader_name}_{epochs}_epochs.pth"
     utils.save_model(model=model, target_dir="models", model_name=save_filepath)
     print("-" * 50 + "\n")
-
-    dataset_name = DATASET_FOLDER_NAME
 
     # write_training_results_to_csv(
     #     machine,
@@ -1502,9 +1497,6 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     global best_acc1
     args.gpu = gpu
 
-    y_preds = []
-    y_pred_tensor = None
-
     if args.gpu is not None:
         print(f"Use GPU: {args.gpu} for training")
 
@@ -1598,12 +1590,8 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     # Data loading code
     if args.dummy:
         print("=> Dummy data is used!")
-        train_dataset = datasets.FakeData(
-            1281167, (3, 224, 224), 1000, transforms.ToTensor()
-        )
-        val_dataset = datasets.FakeData(
-            50000, (3, 224, 224), 1000, transforms.ToTensor()
-        )
+        datasets.FakeData(1281167, (3, 224, 224), 1000, transforms.ToTensor())
+        datasets.FakeData(50000, (3, 224, 224), 1000, transforms.ToTensor())
     else:
         df_dataset = pd.read_csv(CSV_FILE)
 
@@ -1720,15 +1708,6 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         else:
             print(f"=> no checkpoint found at '{args.resume}'")
 
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        val_sampler = torch.utils.data.distributed.DistributedSampler(
-            val_dataset, shuffle=False, drop_last=True
-        )
-    else:
-        train_sampler = None
-        val_sampler = None
-
     if args.info:
         info(args, dataset_root_dir=IMAGE_DATASET_DIR_PATH)
         return
@@ -1838,7 +1817,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         if is_file(path_to_image_from_cli):
             images_filepaths.append(path_to_image_from_cli)
 
-            cropped_paths = handle_autocrop(
+            handle_autocrop(
                 images_filepaths, cols=5, model=model, device=device, resize=args.resize
             )
 
@@ -1859,10 +1838,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
     path_to_model = save_model_to_disk(f"{MODEL_NAME}", model)
 
-    loaded_model_for_inference: nn.Module
-    loaded_model_for_inference = run_get_model_for_inference(
-        model, device, path_to_model, args
-    )
+    run_get_model_for_inference(model, device, path_to_model, args)
 
     # ic("lets make 3 predictions on some random images")
     # get_random_perdictions_and_plots(
@@ -2098,7 +2074,7 @@ def pred_and_plot_image(
     ic(target_image_pred_probs)
     y_preds.append(target_image_pred_probs.cpu())
     # boss: Concatenate list of predictions into a tensor
-    y_pred_tensor = torch.cat(y_preds)
+    torch.cat(y_preds)
 
     # 9. Convert prediction probabilities -> prediction labels
     target_image_pred_label = torch.argmax(target_image_pred_probs, dim=1)
@@ -2337,7 +2313,6 @@ def pred_and_store(
     # ic(class_names)
     ic(device)
     # 2. Create an empty list to store prediction dictionaires
-    pred_list = []
 
     # 3. Loop through target paths
     for path in tqdm(paths):
@@ -2348,7 +2323,7 @@ def pred_and_store(
         pred_dict["image_path"] = path
 
         # 6. Start the prediction timer
-        start_time = timer()
+        timer()
 
         targetSize = Dimensions.HEIGHT
         # 7. Open image path
@@ -2388,25 +2363,11 @@ def pred_and_store(
             ic(out_bbox)
 
             xmin, ymin, xmax, ymax = out_bbox[0]
-            pt1 = (int(xmin), int(ymin))
-            pt2 = (int(xmax), int(ymax))
+            (int(xmin), int(ymin))
+            (int(xmax), int(ymax))
 
             # import bpdb
             # bpdb.set_trace()
-
-            starting_point = pt1
-            end_point = pt2
-            color = (255, 0, 0)
-            thickness = 2
-
-            # generate the image with bounding box on it
-            out_img = cv2.rectangle(
-                unsqueezed_tensor.squeeze().permute(1, 2, 0).cpu().numpy(),
-                starting_point,
-                end_point,
-                color,
-                thickness,
-            )
 
             # TODO: Enable this?
             # if --display
@@ -2421,9 +2382,9 @@ def pred_and_store(
             resized_width = img_width
             resized_dims = (resized_height, resized_width)
 
-            image_tensor_to_resize_channels = image_tensor_to_resize.shape[0]
-            image_tensor_to_resize_height = image_tensor_to_resize.shape[1]
-            image_tensor_to_resize_width = image_tensor_to_resize.shape[2]
+            image_tensor_to_resize.shape[0]
+            image_tensor_to_resize.shape[1]
+            image_tensor_to_resize.shape[2]
 
             # perform fullsize transformation
             fullsize_image, fullsize_bboxes = resize_image_and_bbox(
@@ -2442,13 +2403,8 @@ def pred_and_store(
                 ymax_fullsize,
             ) = fullsize_bboxes[0]
 
-            pt1_fullsize = (int(xmin_fullsize), int(ymin_fullsize))
-            pt2_fullsize = (int(xmax_fullsize), int(ymax_fullsize))
-
-            starting_point_fullsize = pt1_fullsize
-            end_point_fullsize = pt2_fullsize
-            color = OPENCV_RED
-            thickness = 1
+            (int(xmin_fullsize), int(ymin_fullsize))
+            (int(xmax_fullsize), int(ymax_fullsize))
 
             # NOTE: commented out for now, move this into a display image function
             # FIXME

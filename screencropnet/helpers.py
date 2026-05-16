@@ -136,7 +136,6 @@ def non_max_suppression(bboxes, iou_threshold, threshold, box_format="corners"):
     assert isinstance(bboxes, list)
 
     time_limit = 10.0
-    max_det = 300  # maximum of detection per image
     #     max_nms = 30000 # maximum of boxes into torchvision.ops.nms()
 
     t = time.time()
@@ -167,9 +166,9 @@ def non_max_suppression(bboxes, iou_threshold, threshold, box_format="corners"):
             print(len(bboxes_after_nms))
             break  # time limit exceeded
 
-    if len(bboxes_after_nms) > max_det:
-        bboxes_after_nme = bboxes_after_nms[:max_det]
-
+    # NOTE: a max_det truncation was intended here but the result was
+    # discarded (typo'd `bboxes_after_nme`); preserving existing behavior.
+    # Flagged as an out-of-scope follow-up bug.
     return bboxes_after_nms
 
 
@@ -240,7 +239,7 @@ def mean_average_precision(
                 bbox for bbox in ground_truths if bbox[0] == detection[0]
             ]
 
-            num_gts = len(ground_truth_img)
+            len(ground_truth_img)
             best_iou = 0
 
             for idx, gt in enumerate(ground_truth_img):
