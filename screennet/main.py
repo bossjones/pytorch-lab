@@ -67,10 +67,8 @@ from PIL import Image
 from rich import box, print
 from rich.console import Console
 from rich.table import Table
-from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from torchinfo import summary
-from torchvision import datasets, transforms
 from tqdm.auto import tqdm
 from watermark import watermark
 

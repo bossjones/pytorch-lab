@@ -71,10 +71,8 @@ from rich.console import Console
 from rich.table import Table
 from rich.traceback import install
 from sklearn.model_selection import train_test_split
-from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from torchinfo import summary
-from torchvision import datasets, transforms
 from tqdm.auto import tqdm
 from tqdm.notebook import tqdm
 from watermark import watermark
