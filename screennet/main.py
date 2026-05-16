@@ -557,7 +557,7 @@ def compute_confusion_matrix(
             class_labels = np.array([class_labels[0], 1])
     n_labels = class_labels.shape[0]
     lst = []
-    z = list(zip(all_targets, all_predictions))
+    z = list(zip(all_targets, all_predictions, strict=False))
     for combi in product(class_labels, repeat=2):
         lst.append(z.count(combi))
     mat = np.asarray(lst)[:, None].reshape(n_labels, n_labels)
@@ -1204,7 +1204,8 @@ def main():
     if args.gpu is not None:
         warnings.warn(
             "You have chosen a specific GPU. This will completely "
-            "disable data parallelism."
+            "disable data parallelism.",
+            stacklevel=2,
         )
 
     if args.dist_url == "env://" and args.world_size == -1:

@@ -18,7 +18,7 @@ class UnNormalize:
         ------------
         Tensor: Normalized image.
         """
-        for t, m, s in zip(tensor, self.mean, self.std):
+        for t, m, s in zip(tensor, self.mean, self.std, strict=False):
             t.mul_(s).add_(m)
         return tensor
 

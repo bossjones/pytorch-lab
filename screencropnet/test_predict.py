@@ -76,7 +76,7 @@ class ObjLocModel(nn.Module):
         bboxes_logits = self.backbone(images)  ## predicted bounding boxes
 
         # gt_bboxes = ground truth bounding boxes
-        if gt_bboxes != None:
+        if gt_bboxes is not None:
             loss = nn.MSELoss()(bboxes_logits, gt_bboxes)
             return bboxes_logits, loss
 

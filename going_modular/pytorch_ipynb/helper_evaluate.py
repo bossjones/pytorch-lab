@@ -64,7 +64,7 @@ def compute_confusion_matrix(model, data_loader, device):
             class_labels = np.array([class_labels[0], 1])
     n_labels = class_labels.shape[0]
     lst = []
-    z = list(zip(all_targets, all_predictions))
+    z = list(zip(all_targets, all_predictions, strict=False))
     for combi in product(class_labels, repeat=2):
         lst.append(z.count(combi))
     mat = np.asarray(lst)[:, None].reshape(n_labels, n_labels)

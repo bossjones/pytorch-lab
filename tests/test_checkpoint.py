@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import pickle
 
 import pytest
 import torch
@@ -56,7 +57,7 @@ def test_resume_checkpoint_requires_weights_only_false(module: str, tmp_path) ->
     # Characterization guard: documents the torch constraint load_checkpoint
     # works around. If this ever stops raising, revisit weights_only=False.
     path, _ = _write_checkpoint(tmp_path)
-    with pytest.raises(Exception):
+    with pytest.raises(pickle.UnpicklingError):
         torch.load(path, weights_only=True)
 
 

@@ -174,7 +174,7 @@ def pred_and_plot_image(
     image_path: str,
     class_names: list[str] = None,
     transform=None,
-    device: torch.device = "cuda" if torch.cuda.is_available() else "cpu",
+    device: torch.device | None = None,
 ):
     """Makes a prediction on a target image with a trained model and plots the image.
 
@@ -195,6 +195,8 @@ def pred_and_plot_image(
                             transform=torchvision.transforms.ToTensor(),
                             device=device)
     """
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # 1. Load in image and convert the tensor values to float32
     target_image = torchvision.io.read_image(str(image_path)).type(torch.float32)

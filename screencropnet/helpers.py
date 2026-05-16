@@ -1,6 +1,7 @@
 import os
 import shutil
 import time
+from collections import Counter
 from urllib.request import urlretrieve
 
 import torch
@@ -132,7 +133,7 @@ def non_max_suppression(bboxes, iou_threshold, threshold, box_format="corners"):
         list: bboxes after performing NMS given a specific IoU threshold
     """
 
-    assert type(bboxes) == list
+    assert isinstance(bboxes, list)
 
     time_limit = 10.0
     max_det = 300  # maximum of detection per image
