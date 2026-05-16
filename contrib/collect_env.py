@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
+# Stdlib-only; torch is probed optionally via a try/except below.
 
 
 # Unlike the rest of the PyTorch this file must be python2 compliant.

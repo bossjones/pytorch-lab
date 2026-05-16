@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["matplotlib"]
+# ///
 """Headless smoke check that matplotlib can render a figure.
 
 Uses the non-interactive Agg backend and writes a PNG to a temp file instead of
