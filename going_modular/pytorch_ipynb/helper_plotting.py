@@ -82,7 +82,7 @@ def plot_accuracy(train_acc_list, valid_acc_list, results_dir):
 
 def show_examples(model, data_loader, unnormalizer=None, class_dict=None):
 
-    for batch_idx, (features, targets) in enumerate(data_loader):
+    for _batch_idx, (features, targets) in enumerate(data_loader):
         with torch.no_grad():
             features = features
             targets = targets

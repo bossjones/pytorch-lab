@@ -345,7 +345,7 @@ def handle_autocrop(
     resize=False,
 ):
     cropped_image_file_paths = []
-    for i, image_filepath in enumerate(images_filepaths):
+    for _i, image_filepath in enumerate(images_filepaths):
         image, bboxes = predict_from_file(image_filepath, model, device, args)
         img_as_array = np.asarray(image)
         img_as_array = cv2.cvtColor(img_as_array, cv2.COLOR_RGB2BGR)
@@ -822,7 +822,7 @@ def compute_accuracy(
     model.eval()
     with torch.no_grad():
         correct_pred, num_examples = 0, 0
-        for i, (features, targets) in enumerate(data_loader):
+        for _i, (features, targets) in enumerate(data_loader):
             features = features.to(device)
             targets = targets.to(device)
 
@@ -861,7 +861,7 @@ def compute_confusion_matrix(
 
     all_targets, all_predictions = [], []
     with torch.no_grad():
-        for i, (features, targets) in enumerate(data_loader):
+        for _i, (features, targets) in enumerate(data_loader):
             features = features.to(device)
             targets = targets
             logits = model(features)
@@ -1681,7 +1681,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         print(f"Total no. batches in trainloader : {len(trainloader)}")
         print(f"Total no. batches in validloader : {len(validloader)}")
 
-        for images, bboxes in trainloader:
+        for images, bboxes in trainloader:  # noqa: B007  # first-batch peek; images/bboxes used after the loop
             break
 
         print(f"Shape of one batch images : {images.shape}")
@@ -1809,7 +1809,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         print(" Running test command ...")
         images_filepaths = []
 
-        for index, row in trainloader.dataset.df.iterrows():
+        for _index, row in trainloader.dataset.df.iterrows():
             path = os.path.join(f"{DATA_DIR}/", row["img_path"])
             # print(path)
             images_filepaths.append(path)
@@ -1817,7 +1817,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         # get random set of images
         test_images_filepaths = []
 
-        for i in range(10):
+        for _i in range(10):
             # some_image = random.choice(images_filepaths)
             idx = random.randint(0, len(images_filepaths))
             ic(idx)
