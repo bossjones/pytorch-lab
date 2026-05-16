@@ -1206,10 +1206,14 @@ def get_model_summary(
     model: torch.nn.Module,
     input_size: tuple = (32, 3, 224, 224),
     verbose: int = 0,
-    col_names: list[str] = ["input_size", "output_size", "num_params", "trainable"],
+    col_names: list[str] | None = None,
     col_width: int = 20,
-    row_settings: list[str] = ["var_names"],
+    row_settings: list[str] | None = None,
 ):
+    if col_names is None:
+        col_names = ["input_size", "output_size", "num_params", "trainable"]
+    if row_settings is None:
+        row_settings = ["var_names"]
     print(f"Getting model summary for -> {model}")
     # # Do a summary *after* freezing the features and changing the output classifier layer (uncomment for actual output)
     summary(
@@ -2002,9 +2006,11 @@ def get_random_images_from_dataset(
     class_names: list[str],
     num_images_to_plot: int = 3,
     device: torch.device = None,
-    y_preds: list[torch.Tensor] = [],
+    y_preds: list[torch.Tensor] | None = None,
     y_pred_tensor: torch.Tensor = None,
 ):
+    if y_preds is None:
+        y_preds = []
 
     # Get a random list of image paths from test set
     import random
@@ -2044,9 +2050,11 @@ def pred_and_plot_image(
     image_size: tuple[int, int] = (224, 224),
     transform: torchvision.transforms = None,
     device: torch.device = None,
-    y_preds: list[torch.Tensor] = [],
+    y_preds: list[torch.Tensor] | None = None,
     y_pred_tensor: torch.Tensor = None,
 ):
+    if y_preds is None:
+        y_preds = []
 
     # 2. Open image
     img = Image.open(image_path)
