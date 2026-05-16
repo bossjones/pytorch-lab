@@ -3,11 +3,11 @@ Trains a PyTorch image classification model using device-agnostic code.
 """
 
 import os
+
 import torch
+from torchvision import transforms
 
 from going_modular import data_setup, engine, model_builder, utils
-
-from torchvision import transforms
 
 
 def main() -> None:

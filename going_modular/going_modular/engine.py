@@ -1,18 +1,19 @@
 """
 Contains functions for training and testing a PyTorch model.
 """
+from typing import Dict, List, Tuple
+
+import numpy as np
+import pyfiglet
 import torch
 import torch.profiler
-
-from tqdm.auto import tqdm
-from typing import Dict, List, Tuple
+import torchvision
 from icecream import ic
-import pyfiglet
 from rich import print
 from torch.utils.tensorboard import SummaryWriter
-import torchvision
-import numpy as np
 from torchmetrics import Accuracy
+from tqdm.auto import tqdm
+
 
 # SOURCE: https://colab.research.google.com/drive/1nCj54XryHcoMARS4cSxivn3Ci1I6OtvO?usp=sharing#scrollTo=i4a9YMBCToGc
 def calculate_IoU(bb1, bb2):

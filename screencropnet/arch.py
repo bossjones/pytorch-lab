@@ -1,10 +1,11 @@
-import torch
-import torchvision.models as models
-import torch.nn as nn
 import argparse
+
 import timm
-import torchvision.transforms.functional as FT
+import torch
+import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.models as models
+import torchvision.transforms.functional as FT
 
 from screencropnet import devices
 from screencropnet.helpers import find_intersection, find_jaccard_overlap

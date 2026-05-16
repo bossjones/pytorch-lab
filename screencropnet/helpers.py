@@ -1,8 +1,9 @@
-import torch
-import time
 import os
 import shutil
+import time
 from urllib.request import urlretrieve
+
+import torch
 from tqdm import tqdm
 
 # SOURCE: https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection/blob/master/utils.py

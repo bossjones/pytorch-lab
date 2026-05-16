@@ -4,9 +4,8 @@
 
 import matplotlib.image as img
 import matplotlib.pyplot as plt
-from scipy.cluster.vq import whiten
-from scipy.cluster.vq import kmeans
 import pandas as pd
+from scipy.cluster.vq import kmeans, whiten
 
 batman_image = img.imread('autocropped/cropped-ObjLocModelV1-2021-10-20_12-44-46_000.png')
 

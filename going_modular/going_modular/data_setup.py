@@ -3,14 +3,13 @@ Contains functionality for creating PyTorch DataLoaders for
 image classification data.
 """
 import os
-
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
-from typing import Tuple, List
+from typing import List, Tuple
 
 # from utils import display_ascii_text
 import pyfiglet
 from rich import print
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 
 NUM_WORKERS = os.cpu_count()
 

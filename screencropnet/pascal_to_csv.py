@@ -2,10 +2,11 @@
 
 # SOURCE: https://gist.github.com/rotemtam/88d9a4efae243fc77ed4a0f9917c8f6c
 
-import os
 import glob
-import pandas as pd
+import os
 import xml.etree.ElementTree as ET
+
+import pandas as pd
 
 
 def xml_to_csv(path: str):

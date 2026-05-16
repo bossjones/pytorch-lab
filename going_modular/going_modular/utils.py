@@ -1,8 +1,9 @@
 """
 Contains various utility functions for PyTorch model training and saving.
 """
-import torch
 from pathlib import Path
+
+import torch
 from rich import print
 
 

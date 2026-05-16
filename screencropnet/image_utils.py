@@ -1,9 +1,10 @@
 from types import NoneType
+from typing import Optional, Union
+
+import albumentations as A
 import cv2
 import numpy as np
 import torch
-import albumentations as A
-from typing import Optional, Union
 
 
 def opencv_read_and_convert_image(path: str, cvt=cv2.COLOR_BGR2RGB) -> np.ndarray:

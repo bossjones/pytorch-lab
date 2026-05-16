@@ -3,22 +3,17 @@ A series of helper functions used throughout the course.
 
 If a function gets defined once and could be used over and over, it'll go in here.
 """
-import torch
-import matplotlib.pyplot as plt
-import numpy as np
-
-from torch import nn
-
-import os
-import zipfile
-
-from pathlib import Path
-
-import requests
-
 # Walk through an image classification directory and find out how many files (images)
 # are in each subdirectory.
 import os
+import zipfile
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import requests
+import torch
+from torch import nn
 
 
 def walk_through_dir(dir_path):
@@ -174,6 +169,7 @@ def plot_loss_curves(results, to_disk: bool = False):
 # Pred and plot image function from notebook 04
 # See creation: https://www.learnpytorch.io/04_pytorch_custom_datasets/#113-putting-custom-image-prediction-together-building-a-function
 from typing import List
+
 import torchvision
 
 

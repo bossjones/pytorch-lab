@@ -1,15 +1,13 @@
-from helper_evaluate import compute_accuracy
-from helper_evaluate import compute_epoch_loss
-
-import time
-import torch
-import torch.nn.functional as F
-
-from collections import OrderedDict
 import json
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree
+from collections import OrderedDict
+
+import torch
+import torch.nn.functional as F
+from helper_evaluate import compute_accuracy, compute_epoch_loss
 
 
 def train_classifier_simple_v1(

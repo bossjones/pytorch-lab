@@ -9,7 +9,6 @@ import os
 import os.path
 import pathlib
 import platform
-from tqdm.auto import tqdm
 
 # ---------------------------------------------------------------------------
 # Import rich and whatever else we need
@@ -17,15 +16,10 @@ from tqdm.auto import tqdm
 # %matplotlib inline
 import sys
 
+# from rich_dataframe import prettify
+import better_exceptions
 import bpdb
 import pandas as pd
-
-# from rich_dataframe import prettify
-
-
-import better_exceptions
-
-from screennet import devices
 import rich
 
 # ---------------------------------------------------------------------------
@@ -33,13 +27,16 @@ import torch
 import torchvision
 
 # from rich.traceback import install
-
 # install(show_locals=True)
 from icecream import ic
 from rich import box, inspect, print
 from rich.console import Console
 from rich.table import Table
 from torchvision import datasets, transforms
+from tqdm.auto import tqdm
+
+from screennet import devices
+
 
 def _install_exception_hooks() -> None:
     """Install pretty-traceback hooks. Called from main(), never at import."""
@@ -89,12 +86,14 @@ from enum import Enum
 from itertools import product
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import List, Optional, Tuple, Union, Dict
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
+import fastai
 import matplotlib
 import numpy as np
 import numpy.typing as npt
+import PIL
 import requests
 
 # SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
@@ -106,13 +105,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.parallel
 import torch.optim
+import torch.profiler
 import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
+import torchvision.transforms.functional as pytorch_transforms_functional
+from fastai.data.transforms import get_image_files
 from mlxtend.plotting import plot_confusion_matrix
-import PIL
 from PIL import Image
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import Subset
@@ -125,10 +126,7 @@ from helper_functions import (  # Note: could also use torchmetrics.Accuracy()
     accuracy_fn,
     plot_loss_curves,
 )
-import torch.profiler
-import fastai
-from fastai.data.transforms import get_image_files
-import torchvision.transforms.functional as pytorch_transforms_functional
+
 
 # SOURCE: https://github.com/pytorch/vision/blob/main/references/classification/train.py
 def _get_cache_path(filepath):

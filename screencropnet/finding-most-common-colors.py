@@ -3,9 +3,10 @@
 # SOURCE: https://towardsdatascience.com/finding-most-common-colors-in-python-47ea0767a06a
 
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import PIL
+
 
 def show_img_compar(img_1, img_2 ):
     f, ax = plt.subplots(1, 2, figsize=(10,10))

@@ -1,11 +1,9 @@
 # SOURCE: https://github.com/socialhourmobile/SD-hassan-ns/blob/3b6b266b17e0fd0a9b17374cd2afbf4c59b7c245/modules/devices.py
 import argparse
 import contextlib
-
 from typing import Optional, Union
 
 import torch
-
 from icecream import ic
 
 from screennet import errors
@@ -175,7 +173,9 @@ def mps_check():
 # SOURCE: https://github.com/pytorch/pytorch/issues/77988
 def seed_everything(seed: int):
     # Ref: https://gist.github.com/ihoromi4/b681a9088f348942b01711f251e5f964
-    import random, os
+    import os
+    import random
+
     import numpy as np
     import torch
 

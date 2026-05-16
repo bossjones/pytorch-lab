@@ -2,19 +2,17 @@
 
 # SOURCE: https://colab.research.google.com/drive/1ECFFwiXa_EtNL1VNuB8UHBKyMv4MlamN#scrollTo=l-Wz3fOX1yP6
 
-import pandas as pd
-import numpy as np
+import sys
+import traceback
+from typing import Dict, List, Optional, Tuple, Union
+
+import bpdb
 import cv2
 import matplotlib.pyplot as plt
-import torch
-from tqdm.notebook import tqdm
-import traceback
-
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-
+import numpy as np
+import pandas as pd
 import rich
-from rich import inspect, print
+import torch
 
 # from rich.console import Console
 from icecream import ic
@@ -22,9 +20,9 @@ from rich import box, inspect, print
 
 # from rich.console import Console
 from rich.table import Table
-import sys
-from typing import List, Optional, Tuple, Union, Dict
-import bpdb
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from tqdm.notebook import tqdm
 
 # console = Console()
 

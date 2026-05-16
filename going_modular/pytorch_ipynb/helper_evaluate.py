@@ -1,7 +1,8 @@
+from itertools import product
+
+import numpy as np
 import torch
 import torch.nn.functional as F
-import numpy as np
-from itertools import product
 
 
 def compute_accuracy(model, data_loader, device):

@@ -5,13 +5,12 @@
 # import pdb
 # pdb = pdb.pdb
 
-import random
-import socket
 import os
 import os.path
 import pathlib
 import platform
-from tqdm.auto import tqdm
+import random
+import socket
 
 # ---------------------------------------------------------------------------
 # Import rich and whatever else we need
@@ -19,29 +18,25 @@ from tqdm.auto import tqdm
 # %matplotlib inline
 import sys
 
+# from rich_dataframe import prettify
+import better_exceptions
 import bpdb
 import pandas as pd
-
-# from rich_dataframe import prettify
-
-
-import better_exceptions
-
-from screencropnet import devices
 import rich
 
 # ---------------------------------------------------------------------------
 import torch
 import torchvision
-
-from rich.traceback import install
-
 from icecream import ic
 from rich import box, inspect, print
-
 from rich.console import Console
 from rich.table import Table
+from rich.traceback import install
 from torchvision import datasets, transforms
+from tqdm.auto import tqdm
+
+from screencropnet import devices
+
 
 def _install_exception_hooks() -> None:
     """Install pretty-traceback hooks. Called from main(), never at import."""
@@ -88,16 +83,22 @@ import random
 import shutil
 import warnings
 import zipfile
-from enum import Enum
+from enum import Enum, IntEnum
 from itertools import product
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import List, Optional, Tuple, Union, Dict
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
+import albumentations as A
+import cv2
+import fastai
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
+import PIL
 import requests
 
 # SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
@@ -109,18 +110,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.parallel
 import torch.optim
+import torch.profiler
 import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
+import torchvision.transforms.functional as FT
+import torchvision.transforms.functional as pytorch_transforms_functional
+from fastai.data.transforms import get_image_files
 from mlxtend.plotting import plot_confusion_matrix
-import PIL
 from PIL import Image
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import Subset
 from torch.utils.tensorboard import SummaryWriter
 from torchmetrics import ConfusionMatrix
+from tqdm.notebook import tqdm
 from watermark import watermark
 
 # Import accuracy metric
@@ -128,32 +135,9 @@ from helper_functions import (  # Note: could also use torchmetrics.Accuracy()
     accuracy_fn,
     plot_loss_curves,
 )
-import torch.profiler
-import fastai
-from fastai.data.transforms import get_image_files
-import torchvision.transforms.functional as pytorch_transforms_functional
-import cv2
-
-import pandas as pd
-import numpy as np
-import cv2
-import matplotlib.pyplot as plt
-import torch
-from tqdm.notebook import tqdm
-
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-import albumentations as A
-from enum import IntEnum
-
-from screencropnet.data_set import ObjLocDataset
 from screencropnet.arch import ObjLocModel
+from screencropnet.data_set import ObjLocDataset
 from screencropnet.ml_types import ImageNdarrayBGR, ImageNdarrayHWC
-
-import torchvision.transforms.functional as FT
-from PIL import Image
-from typing import Union
-
 
 CSV_FILE = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/labels_pascal_temp.csv"
 DATA_DIR = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/"
