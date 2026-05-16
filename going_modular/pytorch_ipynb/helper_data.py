@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import DataLoader, SubsetRandomSampler, sampler
+from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchvision import datasets, transforms
 
 

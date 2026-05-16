@@ -22,13 +22,12 @@ import sys
 import better_exceptions
 import bpdb
 import pandas as pd
-import rich
 
 # ---------------------------------------------------------------------------
 import torch
 import torchvision
 from icecream import ic
-from rich import box, inspect, print
+from rich import box, print
 from rich.console import Console
 from rich.table import Table
 from rich.traceback import install
@@ -60,14 +59,13 @@ assert (
 import matplotlib.pyplot as plt
 import mlxtend
 import torch
-import torchmetrics
 import torchvision
 from torch import nn
 from torchinfo import summary
 from torchvision import transforms
 
 # breakpoint()
-from going_modular import data_setup, engine, utils  # pylint: disable=no-name-in-module
+from going_modular import engine, utils  # pylint: disable=no-name-in-module
 
 # Try to get torchinfo, install it if it doesn't work
 
@@ -87,23 +85,19 @@ from enum import Enum, IntEnum
 from itertools import product
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 import albumentations as A
 import cv2
-import fastai
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
-import PIL
 import requests
 
 # SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
 import torch
-import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
@@ -122,22 +116,14 @@ from fastai.data.transforms import get_image_files
 from mlxtend.plotting import plot_confusion_matrix
 from PIL import Image
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import Subset
 from torch.utils.tensorboard import SummaryWriter
-from torchmetrics import ConfusionMatrix
 from tqdm.notebook import tqdm
 from watermark import watermark
 
 # Import accuracy metric
-from helper_functions import (  # Note: could also use torchmetrics.Accuracy()
-    accuracy_fn,
-    plot_loss_curves,
-)
 from screencropnet.arch import ObjLocModel
 from screencropnet.data_set import ObjLocDataset
-from screencropnet.ml_types import ImageNdarrayBGR, ImageNdarrayHWC
+from screencropnet.ml_types import ImageNdarrayBGR
 
 CSV_FILE = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/labels_pascal_temp.csv"
 DATA_DIR = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/"

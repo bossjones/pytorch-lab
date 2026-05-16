@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import requests
 import torch
-from torch import nn
 
 
 def walk_through_dir(dir_path):

@@ -7,11 +7,9 @@ import numpy as np
 import pyfiglet
 import torch
 import torch.profiler
-import torchvision
 from icecream import ic
 from rich import print
 from torch.utils.tensorboard import SummaryWriter
-from torchmetrics import Accuracy
 from tqdm.auto import tqdm
 
 

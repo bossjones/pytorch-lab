@@ -5,7 +5,6 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import PIL
 
 
 def show_img_compar(img_1, img_2 ):

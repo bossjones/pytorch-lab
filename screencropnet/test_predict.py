@@ -3,10 +3,6 @@
 
 import os
 import os.path
-import pathlib
-import platform
-import random
-import socket
 
 # ---------------------------------------------------------------------------
 import sys
@@ -14,7 +10,6 @@ import traceback
 
 import better_exceptions
 import bpdb
-import pandas as pd
 
 # ---------------------------------------------------------------------------
 import torch
@@ -22,13 +17,10 @@ import torchvision
 
 # from rich.traceback import install
 # install(show_locals=True)
-from icecream import ic
 
 # from rich import box, inspect, print
 # from rich.console import Console
 # from rich.table import Table
-from torchvision import datasets, transforms
-from tqdm.auto import tqdm
 
 better_exceptions.hook()
 
@@ -48,11 +40,8 @@ assert (
 import matplotlib.pyplot as plt
 import mlxtend
 import torch
-import torchmetrics
 import torchvision
 from torch import nn
-from torchinfo import summary
-from torchvision import transforms
 
 # breakpoint()
 # from going_modular import data_setup, engine, utils  # pylint: disable=no-name-in-module
@@ -61,38 +50,17 @@ assert (
     int(mlxtend.__version__.split(".")[1]) >= 19
 ), "mlxtend verison should be 0.19.0 or higher"
 
-import argparse
 import os
-import random
-import shutil
-import warnings
-import zipfile
-from enum import Enum
-from itertools import product
-from pathlib import Path
-from timeit import default_timer as timer
-from typing import Dict, List, Optional, Tuple, Union
-from urllib.parse import urlparse
 
 # from data_set import ObjLocDataset
 import albumentations as A
 import cv2
-import fastai
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.typing as npt
-import pandas as pd
-import PIL
-import requests
 
 # SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
 import torch
-import torch.backends.cudnn as cudnn
-import torch.distributed as dist
-import torch.multiprocessing as mp
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.nn.parallel
 import torch.optim
 
@@ -104,21 +72,7 @@ import torch.optim
 import torch.profiler
 import torch.utils.data
 import torch.utils.data.distributed
-import torchvision.datasets as datasets
 import torchvision.models as models
-import torchvision.transforms as transforms
-import torchvision.transforms.functional as pytorch_transforms_functional
-from fastai.data.transforms import get_image_files
-from mlxtend.plotting import plot_confusion_matrix
-from PIL import Image
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import Subset
-from torch.utils.tensorboard import SummaryWriter
-from torchmetrics import ConfusionMatrix
-from tqdm.notebook import tqdm
-from watermark import watermark
 
 # from arch import ObjLocModel
 
@@ -147,14 +101,12 @@ CONFIG_IMAGE_SIZE = (224, 224)
 OPENCV_GREEN = (0, 255, 0)
 OPENCV_RED = (255, 0, 0)
 
-import argparse
 
 import matplotlib.patches as patches
 import timm
 import torch.nn as nn
 import torchvision.models as models
 
-from screencropnet import devices
 
 MODEL_NAMES = sorted(
     name

@@ -20,7 +20,6 @@ import sys
 import better_exceptions
 import bpdb
 import pandas as pd
-import rich
 
 # ---------------------------------------------------------------------------
 import torch
@@ -29,7 +28,7 @@ import torchvision
 # from rich.traceback import install
 # install(show_locals=True)
 from icecream import ic
-from rich import box, inspect, print
+from rich import box, print
 from rich.console import Console
 from rich.table import Table
 from torchvision import datasets, transforms
@@ -59,7 +58,6 @@ assert (
 import matplotlib.pyplot as plt
 import mlxtend
 import torch
-import torchmetrics
 import torchvision
 from torch import nn
 from torchinfo import summary
@@ -86,19 +84,15 @@ from enum import Enum
 from itertools import product
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
-import fastai
 import matplotlib
 import numpy as np
-import numpy.typing as npt
-import PIL
 import requests
 
 # SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
 import torch
-import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
@@ -115,15 +109,11 @@ import torchvision.transforms.functional as pytorch_transforms_functional
 from fastai.data.transforms import get_image_files
 from mlxtend.plotting import plot_confusion_matrix
 from PIL import Image
-from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import Subset
 from torch.utils.tensorboard import SummaryWriter
-from torchmetrics import ConfusionMatrix
 from watermark import watermark
 
 # Import accuracy metric
 from helper_functions import (  # Note: could also use torchmetrics.Accuracy()
-    accuracy_fn,
     plot_loss_curves,
 )
 

@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-from typing import Optional, Union
 
 import cv2
-import numpy as np
 import pandas as pd
 import torch
-from icecream import ic
 from torch import Tensor
-from torchvision import datasets, transforms
 
-from screencropnet.ml_types import ImageNdarrayBGR, ImageNdarrayHWC, TensorCHW
+from screencropnet.ml_types import ImageNdarrayHWC, TensorCHW
 
 
 class ObjLocDataset(torch.utils.data.Dataset):
