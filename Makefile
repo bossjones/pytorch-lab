@@ -1,4 +1,5 @@
 .PHONY: setup lock sync env-works env-test test lint format typecheck check \
+	clean jupyter ipython \
 	setup-dataset-scratch-env download-dataset unzip-dataset zip-dataset \
 	download-localization-dataset fetch-assets \
 	install-postgres label-studio
@@ -30,6 +31,19 @@ typecheck:
 	uv run pyright
 
 check: lint typecheck test
+
+# --- Dev utilities ----------------------------------------------------------
+clean:
+	find . -name '*.pyc' -delete; \
+	find . -name '*.pyo' -delete; \
+	find . -name '__pycache__' -type d -exec rm -rf {} +; \
+	rm -f .coverage
+
+jupyter:
+	uv run jupyter notebook
+
+ipython:
+	uv run ipython
 
 # --- Dataset ----------------------------------------------------------------
 setup-dataset-scratch-env:
