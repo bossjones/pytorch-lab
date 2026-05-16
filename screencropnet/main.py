@@ -1753,14 +1753,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     if args.resume:
         if os.path.isfile(args.resume):
             print("=> loading checkpoint '{}'".format(args.resume))
-            if args.gpu is None:
-                checkpoint = torch.load(args.resume, weights_only=False)
-            elif torch.cuda.is_available():
-                # Map model to be loaded to specified single gpu.
-                loc = "cuda:{}".format(args.gpu)
-                checkpoint = torch.load(
-                    args.resume, map_location=loc, weights_only=False
-                )
+            checkpoint = load_checkpoint(args.resume, args.gpu)
             args.start_epoch = checkpoint["epoch"]
             best_acc1 = checkpoint["best_acc1"]
             if args.gpu is not None:
@@ -2351,11 +2344,14 @@ def save_checkpoint(state, filename="saved_checkpoint.pth.tar"):
     torch.save(state, filename)
 
 
-# func to load model checkpoint
-# SOURCE: https://github.com/PineAppleUser/CVprojects/blob/ad49656a0a69354c134554a93d90e07913aa0dab/segmentationLungs/utils.py
-def load_checkpoint(checkpoint, model):
-    print("=> Loading checkpoint")
-    model.load_state_dict(checkpoint["state_dict"])
+# func to load a full training checkpoint for resume
+def load_checkpoint(resume_path: str, gpu: int | None = None) -> dict:
+    """Load a full training checkpoint (trusted local file, weights_only=False)."""
+    if gpu is not None and torch.cuda.is_available():
+        return torch.load(
+            resume_path, map_location=f"cuda:{gpu}", weights_only=False
+        )
+    return torch.load(resume_path, weights_only=False)
 
 
 def get_model_named_params(model: torch.nn.Module):
