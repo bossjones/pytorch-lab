@@ -58,6 +58,7 @@ extend-exclude = [
     "tasks",
     "label_pointer.py",
     "preprocessing_data_loader.py",
+    "*.ipynb",
 ]
 
 [tool.ruff.lint]

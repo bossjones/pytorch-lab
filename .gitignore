@@ -379,6 +379,10 @@ mise.local.toml
 dont_stop.log
 .claude/settings.local.json
 
+# Reference notebooks kept local-only; provenance recorded in
+# ai_docs/screencropnet-assets.md (see specs/post-migration-hardening.md).
+contrib/*.ipynb
+
 
 .mcp.json
 
