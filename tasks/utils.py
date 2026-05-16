@@ -162,15 +162,33 @@ def confirm():
 # SOURCE: https://github.com/ARMmbed/mbed-cli/blob/f168237fabd0e32edcb48e214fc6ce2250046ab3/test/util.py
 # Process execution
 class ProcessException(Exception):
+    """Exception raised when a subprocess or shell command exits with failure.
+
+    Typically constructed with the non-zero return code of the failed process.
+    """
+
     pass
 
 
 class Console:  # pylint: disable=too-few-public-methods
+    """Minimal console helper for emitting formatted, flushed terminal output.
+
+    Output is suppressed entirely when the class-level ``quiet`` flag is set,
+    which is useful when running many subprocesses.
+    """
 
     quiet = False
 
     @classmethod
     def message(cls, str_format, *args):
+        """Print a formatted message to stdout and flush immediately.
+
+        Args:
+            str_format: A message string, optionally containing ``%``-style
+                format placeholders.
+            *args: Positional arguments interpolated into ``str_format`` when
+                provided.
+        """
         if cls.quiet:
             return
 
@@ -185,6 +203,20 @@ class Console:  # pylint: disable=too-few-public-methods
 
 
 def pquery(command, stdin=None, **kwargs):
+    """Run a command and return its decoded stdout.
+
+    Args:
+        command: The command to execute, as a sequence of arguments.
+        stdin: Optional input bytes passed to the process's stdin.
+        **kwargs: Additional keyword arguments forwarded to
+            ``subprocess.Popen``.
+
+    Returns:
+        The process's stdout decoded as a UTF-8 string.
+
+    Raises:
+        ProcessException: If the process exits with a non-zero return code.
+    """
     # SOURCE: https://github.com/ARMmbed/mbed-cli/blob/f168237fabd0e32edcb48e214fc6ce2250046ab3/test/util.py
     # Example:
     print(" ".join(command))
@@ -202,6 +234,17 @@ def pquery(command, stdin=None, **kwargs):
 # Directory navigation
 @contextlib.contextmanager
 def cd(newdir):
+    """Temporarily change the current working directory.
+
+    Restores the previous working directory when the context exits, even if
+    an exception is raised.
+
+    Args:
+        newdir: The directory to switch into for the duration of the context.
+
+    Yields:
+        None.
+    """
     prevdir = os.getcwd()
     os.chdir(newdir)
     try:
@@ -211,6 +254,16 @@ def cd(newdir):
 
 
 def scm(dir=None):
+    """Detect the source control system used by a directory.
+
+    Args:
+        dir: The directory to inspect. Defaults to the current working
+            directory when not provided.
+
+    Returns:
+        ``"git"`` if a ``.git`` directory is found, ``"hg"`` if a ``.hg``
+        directory is found, otherwise ``None``.
+    """
     if not dir:
         dir = os.getcwd()
 
@@ -255,6 +308,15 @@ def _popen_stdout(cmd_arg, cwd=None):
 
 # Higher level functions
 def remove(path):
+    """Recursively remove a directory tree, clearing read-only flags.
+
+    Read-only files are made writable before deletion so the removal does not
+    fail on protected paths.
+
+    Args:
+        path: The directory path to delete.
+    """
+
     def remove_readonly(func, path, _):
         os.chmod(path, stat.S_IWRITE)
         func(path)
@@ -263,14 +325,36 @@ def remove(path):
 
 
 def move_f(src, dst):
+    """Move a file or directory from one path to another.
+
+    Args:
+        src: The source path to move.
+        dst: The destination path.
+    """
     shutil.move(src, dst)
 
 
 def copy_f(src, dst):
+    """Recursively copy a directory tree from one path to another.
+
+    Args:
+        src: The source directory to copy.
+        dst: The destination directory, which must not already exist.
+    """
     shutil.copytree(src, dst)
 
 
 def git_clone(repo_url, dest, sha="master"):
+    """Clone a git repository and check out a specific revision.
+
+    The clone is skipped if the destination already exists.
+
+    Args:
+        repo_url: The URL of the git repository to clone.
+        dest: The local destination directory for the clone.
+        sha: The branch, tag, or commit SHA to check out. Defaults to
+            ``"master"``.
+    """
     # First check if folder exists
     if not os.path.exists(dest):
         # check if folder is a git repo
@@ -285,11 +369,28 @@ def git_clone(repo_url, dest, sha="master"):
 
 
 def whoami():
+    """Return the current logged-in user information.
+
+    Returns:
+        The stripped output of the ``who`` command as bytes.
+    """
     whoami = _popen("who")
     return whoami
 
 
 def environ_append(key, value, separator=" ", force=False):
+    """Append a value to an environment variable.
+
+    If the variable already has a value, the new value is appended using the
+    given separator; otherwise the variable is set to the value.
+
+    Args:
+        key: The name of the environment variable.
+        value: The value to append.
+        separator: The string used to join the old and new values. Defaults
+            to a single space.
+        force: Currently unused; retained for API compatibility.
+    """
     old_value = os.environ.get(key)
     if old_value is not None:
         value = old_value + separator + value
@@ -297,6 +398,18 @@ def environ_append(key, value, separator=" ", force=False):
 
 
 def environ_prepend(key, value, separator=" ", force=False):
+    """Prepend a value to an environment variable.
+
+    If the variable already has a value, the new value is prepended using the
+    given separator; otherwise the variable is set to the value.
+
+    Args:
+        key: The name of the environment variable.
+        value: The value to prepend.
+        separator: The string used to join the new and old values. Defaults
+            to a single space.
+        force: Currently unused; retained for API compatibility.
+    """
     old_value = os.environ.get(key)
     if old_value is not None:
         value = value + separator + old_value
@@ -304,6 +417,15 @@ def environ_prepend(key, value, separator=" ", force=False):
 
 
 def environ_remove(key, value, separator=":", force=False):
+    """Remove a value from a separator-delimited environment variable.
+
+    Args:
+        key: The name of the environment variable.
+        value: The value to remove from the variable.
+        separator: The delimiter used to split the variable's entries.
+            Defaults to ``":"``.
+        force: Currently unused; retained for API compatibility.
+    """
     old_value = os.environ.get(key)
     if old_value is not None:
         old_value_split = old_value.split(separator)
@@ -313,24 +435,64 @@ def environ_remove(key, value, separator=":", force=False):
 
 
 def environ_set(key, value):
+    """Set an environment variable to a given value.
+
+    Args:
+        key: The name of the environment variable.
+        value: The value to assign.
+    """
     os.environ[key] = value
 
 
 def environ_get(key):
+    """Get the current value of an environment variable.
+
+    Args:
+        key: The name of the environment variable.
+
+    Returns:
+        The variable's value, or ``None`` if it is not set.
+    """
     return os.environ.get(key)
 
 
 def path_append(value):
+    """Append a directory to the ``PATH`` environment variable.
+
+    The directory is only added if it exists on disk.
+
+    Args:
+        value: The directory path to append to ``PATH``.
+    """
     if os.path.exists(value):
         environ_append("PATH", value, ":")
 
 
 def path_prepend(value, force=False):
+    """Prepend a directory to the ``PATH`` environment variable.
+
+    The directory is only added if it exists on disk.
+
+    Args:
+        value: The directory path to prepend to ``PATH``.
+        force: Forwarded to :func:`environ_prepend`; currently unused.
+    """
     if os.path.exists(value):
         environ_prepend("PATH", value, ":", force)
 
 
 def mkdir_p(path):
+    """Create a directory and all parents, like ``mkdir -p``.
+
+    Existing directories are silently ignored.
+
+    Args:
+        path: The directory path to create.
+
+    Raises:
+        OSError: If creation fails for a reason other than the directory
+            already existing.
+    """
     try:
         os.makedirs(path)
     except OSError as exc:  # Python >2.5
@@ -341,4 +503,10 @@ def mkdir_p(path):
 
 
 def dump_env_var(var):
+    """Print the current value of an environment variable for debugging.
+
+    Args:
+        var: The name of the environment variable to display. ``<EMPTY>`` is
+            shown when the variable is unset.
+    """
     Console.message("Env Var:{}={}".format(var, os.environ.get(var, "<EMPTY>")))

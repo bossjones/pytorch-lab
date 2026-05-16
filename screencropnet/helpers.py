@@ -283,13 +283,37 @@ def mean_average_precision(
 
 
 class TqdmUpTo(tqdm):
+    """A ``tqdm`` subclass that integrates with ``urlretrieve``.
+
+    Provides an :meth:`update_to` method whose signature matches the
+    ``reporthook`` callback expected by ``urllib.request.urlretrieve``,
+    allowing download progress to be displayed via a ``tqdm`` bar.
+    """
+
     def update_to(self, b=1, bsize=1, tsize=None):
+        """Update the progress bar from an ``urlretrieve`` callback.
+
+        Args:
+            b: Number of blocks transferred so far.
+            bsize: Size of each block, in bytes.
+            tsize: Total size of the download in bytes, or ``None``/``-1``
+                if unknown. When provided, it sets the bar's total.
+        """
         if tsize is not None:
             self.total = tsize
         self.update(b * bsize - self.n)
 
 
 def download_url(url, filepath):
+    """Download a file from a URL, showing a tqdm progress bar.
+
+    Creates the destination directory if needed. If ``filepath`` already
+    exists, the download is skipped.
+
+    Args:
+        url: The URL to download from.
+        filepath: Local path where the downloaded file is written.
+    """
     directory = os.path.dirname(os.path.abspath(filepath))
     os.makedirs(directory, exist_ok=True)
     if os.path.exists(filepath):
@@ -308,5 +332,12 @@ def download_url(url, filepath):
 
 
 def extract_archive(filepath):
+    """Extract a zip or tar archive into its containing directory.
+
+    Args:
+        filepath: Path to the archive file. The archive is unpacked into
+            the directory that contains it, using
+            ``shutil.unpack_archive`` (format inferred from the extension).
+    """
     extract_dir = os.path.dirname(os.path.abspath(filepath))
     shutil.unpack_archive(filepath, extract_dir)

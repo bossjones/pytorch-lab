@@ -10,7 +10,23 @@ MODEL_NAMES = sorted(
 
 
 class ObjLocModel(nn.Module):
+    """EfficientNet-B0-based object localization model.
+
+    Wraps a ``timm`` ``efficientnet_b0`` backbone configured with
+    ``num_classes=4`` so that it regresses 4 bounding-box coordinates
+    (x_min, y_min, x_max, y_max) instead of class logits. When ground-truth
+    boxes are supplied to :meth:`forward`, the predictions are scored with
+    ``nn.MSELoss`` and the loss is returned alongside them.
+    """
+
     def __init__(self, pretrained: bool = True):
+        """Build the localization model.
+
+        Args:
+            pretrained: If ``True``, initialize the EfficientNet-B0 backbone
+                with ImageNet pretrained weights; otherwise use random
+                initialization.
+        """
         super().__init__()
 
         self.backbone = timm.create_model(
@@ -22,6 +38,20 @@ class ObjLocModel(nn.Module):
     #     self.backbone = timm.create_model(args.arch, pretrained=True, num_classes=4)
 
     def forward(self, images, gt_bboxes=None):
+        """Run a forward pass and optionally compute the regression loss.
+
+        Args:
+            images: Input image batch tensor of shape ``(B, C, H, W)``.
+            gt_bboxes: Optional ground-truth bounding boxes of shape
+                ``(B, 4)``. When provided, an MSE loss between the
+                predictions and these targets is also returned.
+
+        Returns:
+            If ``gt_bboxes`` is ``None``, a tensor of shape ``(B, 4)`` with
+            the predicted bounding-box coordinates. Otherwise, a tuple
+            ``(bboxes_logits, loss)`` where ``bboxes_logits`` has shape
+            ``(B, 4)`` and ``loss`` is the scalar MSE loss tensor.
+        """
         bboxes_logits = self.backbone(images)  ## predicted bounding boxes
 
         # gt_bboxes = ground truth bounding boxes

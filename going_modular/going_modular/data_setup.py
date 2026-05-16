@@ -15,6 +15,12 @@ NUM_WORKERS = os.cpu_count()
 
 
 def display_ascii_text(txt: str, font: str = "stop"):
+    """Renders text as an ASCII-art banner and prints it.
+
+    Args:
+        txt: The text to render as ASCII art.
+        font: The pyfiglet font to use for rendering.
+    """
     title = pyfiglet.figlet_format(txt, font=font)
     print(f"[magenta]{title}[/magenta]")
 

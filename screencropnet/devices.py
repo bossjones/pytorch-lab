@@ -11,6 +11,15 @@ from screencropnet import errors
 # has_mps is only available in nightly pytorch (for now) and MasOS 12.3+.
 # check `getattr` and try it for compatibility
 def has_mps() -> bool:
+    """Check whether the Apple MPS (Metal Performance Shaders) backend is usable.
+
+    Returns ``False`` if MPS is not available, and additionally verifies it
+    works by attempting to move a tensor onto the ``mps`` device.
+
+    Returns:
+        ``True`` if a tensor can be allocated on the MPS device, ``False``
+        otherwise.
+    """
     if not torch.backends.mps.is_available():
         return False
     try:
@@ -21,6 +30,19 @@ def has_mps() -> bool:
 
 
 def extract_device_id(args, name):
+    """Extract the value following a named flag from a list of CLI arguments.
+
+    Scans ``args`` for the first element containing ``name`` and returns the
+    element immediately after it (e.g. the device id following ``--device``).
+
+    Args:
+        args: A sequence of command-line argument strings.
+        name: The flag name to search for within each argument.
+
+    Returns:
+        The argument value immediately following the matched flag, or ``None``
+        if the flag is not present.
+    """
     for x in range(len(args)):
         if name in args[x]:
             return args[x + 1]
@@ -29,6 +51,18 @@ def extract_device_id(args, name):
 
 
 def get_optimal_device(args: argparse.Namespace):
+    """Select the best available compute device.
+
+    Prefers CUDA (optionally pinned to ``args.gpu`` if set), then falls back to
+    Apple MPS, and finally to CPU.
+
+    Args:
+        args: Parsed arguments expected to expose a ``gpu`` attribute holding an
+            optional CUDA device id.
+
+    Returns:
+        A :class:`torch.device` for the highest-priority available backend.
+    """
     if torch.cuda.is_available():
         # from modules import shared
         device_id: int | None | None
@@ -47,12 +81,21 @@ def get_optimal_device(args: argparse.Namespace):
 
 
 def torch_gc():
+    """Release cached GPU memory.
+
+    When CUDA is available, empties the allocator cache and performs an
+    inter-process CUDA collection. No-op on MPS/CPU.
+    """
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
 
 
 def enable_tf32():
+    """Enable TF32 precision for CUDA matmul and cuDNN operations.
+
+    Has no effect on MPS or CPU since TF32 is a CUDA-only feature.
+    """
     if torch.cuda.is_available():
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
@@ -69,6 +112,19 @@ dtype_vae = torch.float16
 
 
 def randn(seed: int, shape: int) -> torch.Tensor:
+    """Generate a seeded random-normal tensor on the active device.
+
+    On MPS the tensor is generated on the CPU with a seeded generator and then
+    moved to the device, working around PyTorch's incorrect seeding behavior on
+    the Metal backend.
+
+    Args:
+        seed: The manual seed used for reproducible sampling.
+        shape: The shape of the tensor to generate.
+
+    Returns:
+        A random-normal :class:`torch.Tensor` on the active device.
+    """
     # Pytorch currently doesn't handle setting randomness correctly when the metal backend is used.
     if device.type == "mps":
         generator = torch.Generator(device=cpu)
@@ -81,6 +137,17 @@ def randn(seed: int, shape: int) -> torch.Tensor:
 
 
 def randn_without_seed(shape: int):
+    """Generate an unseeded random-normal tensor on the active device.
+
+    On MPS the tensor is generated on the CPU and then moved to the device,
+    working around PyTorch's randomness handling on the Metal backend.
+
+    Args:
+        shape: The shape of the tensor to generate.
+
+    Returns:
+        A random-normal :class:`torch.Tensor` on the active device.
+    """
     # Pytorch currently doesn't handle setting randomness correctly when the metal backend is used.
     if device.type == "mps":
         generator = torch.Generator(device=cpu)
@@ -130,10 +197,28 @@ def mps_contiguous(input_tensor: torch.Tensor, device: torch.device):
 
 
 def mps_contiguous_to(input_tensor: torch.Tensor, device: torch.device):
+    """Make a tensor contiguous (if on MPS) and move it to the target device.
+
+    Combines the MPS contiguity workaround with a device transfer in one call.
+
+    Args:
+        input_tensor: The tensor to (optionally) make contiguous and move.
+        device: The target device to move the tensor to.
+
+    Returns:
+        The tensor on ``device``, made contiguous first when ``device`` is MPS.
+    """
     return mps_contiguous(input_tensor, device).to(device)
 
 
 def mps_check():
+    """Diagnose Apple MPS availability and exercise the device.
+
+    Prints an explanatory message when MPS is unavailable (distinguishing a
+    PyTorch build without MPS from an unsupported macOS/device). When MPS is
+    available, allocates tensors directly on the ``mps`` device and runs a
+    trivial operation to confirm the backend works.
+    """
     # Check that MPS is available
     if not torch.backends.mps.is_available():
         if not torch.backends.mps.is_built():
@@ -169,6 +254,14 @@ def mps_check():
 
 # SOURCE: https://github.com/pytorch/pytorch/issues/77988
 def seed_everything(seed: int):
+    """Seed all relevant RNGs for reproducible runs.
+
+    Seeds Python's ``random``, the ``PYTHONHASHSEED`` environment variable,
+    NumPy, and PyTorch (CPU and CUDA), and enables deterministic cuDNN.
+
+    Args:
+        seed: The seed value applied across all random number generators.
+    """
     # Ref: https://gist.github.com/ihoromi4/b681a9088f348942b01711f251e5f964
     import os
     import random

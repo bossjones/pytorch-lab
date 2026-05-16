@@ -9,6 +9,13 @@ from going_modular import data_setup, engine, model_builder, utils
 
 
 def main() -> None:
+    """Trains and saves a TinyVGG image classification model.
+
+    Sets up hyperparameters and data directories, creates train/test
+    DataLoaders via data_setup.create_dataloaders, builds a TinyVGG model,
+    trains it with engine.train, and persists the result with
+    utils.save_model.
+    """
     # Setup hyperparameters
     NUM_EPOCHS = 5
     BATCH_SIZE = 32

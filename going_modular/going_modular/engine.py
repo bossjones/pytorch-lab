@@ -14,6 +14,19 @@ from tqdm.auto import tqdm
 
 # SOURCE: https://colab.research.google.com/drive/1nCj54XryHcoMARS4cSxivn3Ci1I6OtvO?usp=sharing#scrollTo=i4a9YMBCToGc
 def calculate_IoU(bb1, bb2):
+    """Calculates the Intersection over Union (IoU) of two bounding boxes.
+
+    Each box is expected as ``(xmin, ymin, xmax, ymax)``. Returns ``0.0``
+    when the boxes do not overlap.
+
+    Args:
+        bb1: First bounding box as ``(xmin, ymin, xmax, ymax)``.
+        bb2: Second bounding box as ``(xmin, ymin, xmax, ymax)``.
+
+    Returns:
+        The IoU (area of overlap divided by area of union) as a float in
+        the range [0.0, 1.0].
+    """
     # calculate IoU(Intersection over Union) of 2 boxes
     # **IoU = Area of Overlap / Area of Union
     # https://github.com/Hulkido/RCNN/blob/master/RCNN.ipynb
@@ -49,6 +62,12 @@ def calculate_IoU(bb1, bb2):
 
 
 def display_ascii_text(txt: str, font: str = "stop"):
+    """Renders text as an ASCII-art banner and prints it.
+
+    Args:
+        txt: The text to render as ASCII art.
+        font: The pyfiglet font to use for rendering.
+    """
     title = pyfiglet.figlet_format(txt, font=font)
     print(f"[magenta]{title}[/magenta]")
 
@@ -338,6 +357,22 @@ def train_localization_fn(
     device: torch.device,
     # writer: SummaryWriter = None,  # new parameter to take in a writer
 ):
+    """Trains the localization model for a single epoch.
+
+    Puts the model in train mode and iterates over the DataLoader, sending
+    images and ground-truth bboxes to the device, running the forward pass
+    (which returns predicted bboxes and the loss), then backpropagating and
+    stepping the optimizer. Execution is wrapped in a torch profiler.
+
+    Args:
+        model: The localization PyTorch model to be trained.
+        dataloader: A DataLoader yielding ``(images, gt_bboxes)`` batches.
+        optimizer: A PyTorch optimizer used to minimize the loss.
+        device: A target device to compute on (e.g. "cuda" or "cpu").
+
+    Returns:
+        The average training loss per batch for the epoch as a float.
+    """
 
     total_loss = 0.0
 
@@ -395,6 +430,20 @@ def eval_localization_fn(
     dataloader: torch.utils.data.DataLoader,
     device: torch.device,
 ):
+    """Evaluates the localization model for a single epoch.
+
+    Puts the model in eval mode and iterates over the DataLoader under an
+    inference context, sending images and ground-truth bboxes to the device
+    and accumulating the loss returned by the forward pass.
+
+    Args:
+        model: The localization PyTorch model to be evaluated.
+        dataloader: A DataLoader yielding ``(images, gt_bboxes)`` batches.
+        device: A target device to compute on (e.g. "cuda" or "cpu").
+
+    Returns:
+        The average validation loss per batch for the epoch as a float.
+    """
 
     total_loss = 0.0
 
@@ -437,6 +486,22 @@ def train_localization(
     # writer: SummaryWriter,
     writer: SummaryWriter = None,  # new parameter to take in a writer
 ):
+    """Runs the full training loop for the localization model.
+
+    For each epoch, calls train_localization_fn() and eval_localization_fn(),
+    saves the model state dict to ``screencropnet_best_model.pt`` whenever the
+    validation loss improves, and optionally logs train/validation loss to
+    TensorBoard via the provided writer.
+
+    Args:
+        model: The localization PyTorch model to be trained and evaluated.
+        trainloader: A DataLoader instance for training.
+        validloader: A DataLoader instance for validation.
+        optimizer: A PyTorch optimizer used to minimize the loss.
+        epochs: An integer indicating how many epochs to train for.
+        device: A target device to compute on (e.g. "cuda" or "cpu").
+        writer: An optional SummaryWriter instance to log results to.
+    """
 
     best_valid_loss = np.Inf
 
