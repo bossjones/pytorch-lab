@@ -5,11 +5,14 @@
 # import pdb
 # pdb = pdb.pdb
 
+# Try to get torchinfo, install it if it doesn't work
+import argparse
 import os
 import os.path
 import pathlib
 import platform
 import random
+import shutil
 import socket
 
 # ---------------------------------------------------------------------------
@@ -17,85 +20,31 @@ import socket
 # %load_ext rich
 # %matplotlib inline
 import sys
-
-# from rich_dataframe import prettify
-import better_exceptions
-import bpdb
-import pandas as pd
-
-# ---------------------------------------------------------------------------
-import torch
-import torchvision
-from icecream import ic
-from rich import box, print
-from rich.console import Console
-from rich.table import Table
-from rich.traceback import install
-from torchvision import datasets, transforms
-from tqdm.auto import tqdm
-
-from screencropnet import devices
-
-
-def _install_exception_hooks() -> None:
-    """Install pretty-traceback hooks. Called from main(), never at import."""
-    install(show_locals=True)
-    better_exceptions.hook()
-
-
-console: Console = Console()
-# ---------------------------------------------------------------------------
-
-
-assert int(torch.__version__.split(".")[1]) >= 12, "torch version should be 1.12+"
-assert int(torchvision.__version__.split(".")[1]) >= 13, (
-    "torchvision version should be 0.13+"
-)
-# print(f"torch version: {torch.__version__}")
-# print(f"torchvision version: {torchvision.__version__}")
-# ---------------------------------------------------------------------------
-
-# Continue with regular imports
-import matplotlib.pyplot as plt
-import mlxtend
-import torch
-import torchvision
-from torch import nn
-from torchinfo import summary
-from torchvision import transforms
-
-# breakpoint()
-from going_modular import engine, utils  # pylint: disable=no-name-in-module
-
-# Try to get torchinfo, install it if it doesn't work
-
-
-# print(f"mlxtend version: {mlxtend.__version__}")
-assert int(mlxtend.__version__.split(".")[1]) >= 19, (
-    "mlxtend verison should be 0.19.0 or higher"
-)
-
-import argparse
-import os
-import random
-import shutil
 import warnings
 import zipfile
 from enum import Enum, IntEnum
 from itertools import product
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 import albumentations as A
+
+# from rich_dataframe import prettify
+import better_exceptions
+import bpdb
 import cv2
 import matplotlib
+
+# ---------------------------------------------------------------------------
+# Continue with regular imports
 import matplotlib.pyplot as plt
+import mlxtend
 import numpy as np
 import pandas as pd
 import requests
 
+# ---------------------------------------------------------------------------
 # SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
 import torch
 import torch.distributed as dist
@@ -107,23 +56,54 @@ import torch.optim
 import torch.profiler
 import torch.utils.data
 import torch.utils.data.distributed
+import torchvision
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as FT
 import torchvision.transforms.functional as pytorch_transforms_functional
 from fastai.data.transforms import get_image_files
+from icecream import ic
 from mlxtend.plotting import plot_confusion_matrix
 from PIL import Image
+from rich import box, print
+from rich.console import Console
+from rich.table import Table
+from rich.traceback import install
 from sklearn.model_selection import train_test_split
+from torch import nn
 from torch.utils.tensorboard import SummaryWriter
+from torchinfo import summary
+from torchvision import datasets, transforms
+from tqdm.auto import tqdm
 from tqdm.notebook import tqdm
 from watermark import watermark
+
+# breakpoint()
+from going_modular import engine, utils  # pylint: disable=no-name-in-module
+from screencropnet import devices
 
 # Import accuracy metric
 from screencropnet.arch import ObjLocModel
 from screencropnet.data_set import ObjLocDataset
 from screencropnet.ml_types import ImageNdarrayBGR
+
+assert int(torch.__version__.split(".")[1]) >= 12, "torch version should be 1.12+"
+assert int(torchvision.__version__.split(".")[1]) >= 13, (
+    "torchvision version should be 0.13+"
+)
+assert int(mlxtend.__version__.split(".")[1]) >= 19, (
+    "mlxtend verison should be 0.19.0 or higher"
+)
+
+
+def _install_exception_hooks() -> None:
+    """Install pretty-traceback hooks. Called from main(), never at import."""
+    install(show_locals=True)
+    better_exceptions.hook()
+
+
+console: Console = Console()
 
 CSV_FILE = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/labels_pascal_temp.csv"
 DATA_DIR = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/"

@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import requests
 import torch
+import torchvision
 
 
 def walk_through_dir(dir_path):
@@ -168,11 +169,6 @@ def plot_loss_curves(results, to_disk: bool = False):
 
 # Pred and plot image function from notebook 04
 # See creation: https://www.learnpytorch.io/04_pytorch_custom_datasets/#113-putting-custom-image-prediction-together-building-a-function
-from typing import List
-
-import torchvision
-
-
 def pred_and_plot_image(
     model: torch.nn.Module,
     image_path: str,

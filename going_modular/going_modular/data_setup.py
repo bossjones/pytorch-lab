@@ -4,7 +4,6 @@ image classification data.
 """
 
 import os
-from typing import List, Tuple
 
 # from utils import display_ascii_text
 import pyfiglet

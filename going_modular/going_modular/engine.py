@@ -2,7 +2,6 @@
 Contains functions for training and testing a PyTorch model.
 """
 
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pyfiglet

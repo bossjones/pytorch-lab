@@ -4,7 +4,6 @@
 
 import sys
 import traceback
-from typing import Optional
 
 import bpdb
 import cv2

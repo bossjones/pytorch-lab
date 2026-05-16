@@ -1,80 +1,39 @@
 #!/usr/bin/env python
+"""Manual prediction smoke script (not a pytest module).
 
+Excluded from the test suite by [tool.pytest.ini_options] testpaths; kept
+here for ad-hoc bbox-prediction checks. Flagged for relocation to examples/
+as an out-of-scope follow-up (see specs/post-migration-hardening.md).
+"""
 
 import os
-import os.path
-
-# ---------------------------------------------------------------------------
 import sys
 import traceback
 
+import albumentations as A
 import better_exceptions
 import bpdb
-
-# ---------------------------------------------------------------------------
+import cv2
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import mlxtend
+import numpy as np
+import timm
 import torch
+import torch.nn as nn
 import torchvision
-
-# from rich.traceback import install
-# install(show_locals=True)
-
-# from rich import box, inspect, print
-# from rich.console import Console
-# from rich.table import Table
-
-better_exceptions.hook()
-
-# console: Console = Console()
-# ---------------------------------------------------------------------------
-
+import torchvision.models as models
 
 assert int(torch.__version__.split(".")[1]) >= 12, "torch version should be 1.12+"
 assert int(torchvision.__version__.split(".")[1]) >= 13, (
     "torchvision version should be 0.13+"
 )
-# print(f"torch version: {torch.__version__}")
-# print(f"torchvision version: {torchvision.__version__}")
-# ---------------------------------------------------------------------------
-
-# Continue with regular imports
-import matplotlib.pyplot as plt
-import mlxtend
-import torch
-import torchvision
-from torch import nn
-
-# breakpoint()
-# from going_modular import data_setup, engine, utils  # pylint: disable=no-name-in-module
-
 assert int(mlxtend.__version__.split(".")[1]) >= 19, (
     "mlxtend verison should be 0.19.0 or higher"
 )
 
-import os
-
-# from data_set import ObjLocDataset
-import albumentations as A
-import cv2
-import matplotlib.pyplot as plt
-import numpy as np
-
-# SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
-import torch
-import torch.nn as nn
-import torch.nn.parallel
-import torch.optim
-
-# Import accuracy metric
-# from helper_functions import (  # Note: could also use torchmetrics.Accuracy()
-#     accuracy_fn,
-#     plot_loss_curves,
-# )
-import torch.profiler
-import torch.utils.data
-import torch.utils.data.distributed
-import torchvision.models as models
-
-# from arch import ObjLocModel
+# SOURCE: https://github.com/pytorch/pytorch/issues/78924
+torch.set_num_threads(1)
 
 CSV_FILE = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/labels_pascal_temp.csv"
 DATA_DIR = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/"
@@ -90,22 +49,12 @@ NUM_COR = 4
 
 NUM_WORKERS = os.cpu_count()
 
-
-# SOURCE: https://github.com/pytorch/pytorch/issues/78924
-torch.set_num_threads(1)
-
 MODEL_NAME = "ScreenCropNetV1"
 DATASET_FOLDER_NAME = "twitter_screenshots_localization_dataset"
 CONFIG_IMAGE_SIZE = (224, 224)
 
 OPENCV_GREEN = (0, 255, 0)
 OPENCV_RED = (255, 0, 0)
-
-
-import matplotlib.patches as patches
-import timm
-import torch.nn as nn
-import torchvision.models as models
 
 
 MODEL_NAMES = sorted(
@@ -162,6 +111,7 @@ def get_bbox(bboxes, col, color="white", bbox_format="pascal_voc"):
 
 
 if __name__ == "__main__":
+    better_exceptions.hook()
     try:
         IMG_SIZE = 140
         # main()

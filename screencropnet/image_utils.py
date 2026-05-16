@@ -1,5 +1,4 @@
 from types import NoneType
-from typing import Union
 
 import albumentations as A
 import cv2

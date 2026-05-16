@@ -2,7 +2,6 @@ import timm
 import torch.nn as nn
 import torchvision.models as models
 
-
 MODEL_NAMES = sorted(
     name
     for name in models.__dict__
