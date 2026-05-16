@@ -2007,13 +2007,6 @@ def info(args, dataset_root_dir=""):
     sys.exit(0)
 
 
-# func to save model checkpoint
-# SOURCE: https://github.com/PineAppleUser/CVprojects/blob/ad49656a0a69354c134554a93d90e07913aa0dab/segmentationLungs/utils.py
-def save_checkpoint(state, filename="saved_checkpoint.pth.tar"):
-    print("=> Saving checkpoint")
-    torch.save(state, filename)
-
-
 # func to load a full training checkpoint for resume
 def load_checkpoint(resume_path: str, gpu: int | None = None) -> dict:
     """Load a full training checkpoint (trusted local file, weights_only=False)."""

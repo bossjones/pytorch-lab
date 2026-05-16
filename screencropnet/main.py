@@ -74,7 +74,6 @@ from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
 from torchinfo import summary
 from tqdm.auto import tqdm
-from tqdm.notebook import tqdm
 from watermark import watermark
 
 # breakpoint()
@@ -2280,13 +2279,6 @@ def info(args, dataset_root_dir=""):
     # validate_seed(args.seed)
     walk_through_dir(dataset_root_dir)
     sys.exit(0)
-
-
-# func to save model checkpoint
-# SOURCE: https://github.com/PineAppleUser/CVprojects/blob/ad49656a0a69354c134554a93d90e07913aa0dab/segmentationLungs/utils.py
-def save_checkpoint(state, filename="saved_checkpoint.pth.tar"):
-    print("=> Saving checkpoint")
-    torch.save(state, filename)
 
 
 # func to load a full training checkpoint for resume
