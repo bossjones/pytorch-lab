@@ -52,9 +52,7 @@ def train_classifier_simple_v1(
 
             if not batch_idx % logging_interval:
                 print(
-                    "Epoch: {:03d}/{:03d} | Batch {:04d}/{:04d} | Loss: {:.4f}".format(
-                        epoch + 1, num_epochs, batch_idx, len(train_loader), loss
-                    )
+                    f"Epoch: {epoch + 1:03d}/{num_epochs:03d} | Batch {batch_idx:04d}/{len(train_loader):04d} | Loss: {loss:.4f}"
                 )
 
         if not skip_epoch_stats:
@@ -64,9 +62,7 @@ def train_classifier_simple_v1(
                 train_acc = compute_accuracy(model, train_loader, device)
                 train_loss = compute_epoch_loss(model, train_loader, device)
                 print(
-                    "***Epoch: {:03d}/{:03d} | Train. Acc.: {:.3f}% | Loss: {:.3f}".format(
-                        epoch + 1, num_epochs, train_acc, train_loss
-                    )
+                    f"***Epoch: {epoch + 1:03d}/{num_epochs:03d} | Train. Acc.: {train_acc:.3f}% | Loss: {train_loss:.3f}"
                 )
                 log_dict["train_loss_per_epoch"].append(train_loss.item())
                 log_dict["train_acc_per_epoch"].append(train_acc.item())
@@ -75,9 +71,7 @@ def train_classifier_simple_v1(
                     valid_acc = compute_accuracy(model, valid_loader, device)
                     valid_loss = compute_epoch_loss(model, valid_loader, device)
                     print(
-                        "***Epoch: {:03d}/{:03d} | Valid. Acc.: {:.3f}% | Loss: {:.3f}".format(
-                            epoch + 1, num_epochs, valid_acc, valid_loss
-                        )
+                        f"***Epoch: {epoch + 1:03d}/{num_epochs:03d} | Valid. Acc.: {valid_acc:.3f}% | Loss: {valid_loss:.3f}"
                     )
                     log_dict["valid_loss_per_epoch"].append(valid_loss.item())
                     log_dict["valid_acc_per_epoch"].append(valid_acc.item())

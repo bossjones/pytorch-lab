@@ -1165,14 +1165,14 @@ def clean_dir_images(image_path):
         try:
             f.unlink()
         except OSError as e:
-            print("Error: {} : {}".format(f, e.strerror))
+            print(f"Error: {f} : {e.strerror}")
 
 
 def clean_dirs_in_dir(image_path):
     try:
         shutil.rmtree(image_path)
     except OSError as e:
-        print("Error: {} : {}".format(image_path, e.strerror))
+        print(f"Error: {image_path} : {e.strerror}")
 
 
 def setup_workspace(data_path: pathlib.PosixPath, image_path: pathlib.PosixPath):
@@ -1947,7 +1947,7 @@ class AverageMeter:
         elif self.summary_type is Summary.COUNT:
             fmtstr = "{name} {count:.3f}"
         else:
-            raise ValueError("invalid summary type {!r}".format(self.summary_type))
+            raise ValueError(f"invalid summary type {self.summary_type!r}")
 
         return fmtstr.format(**self.__dict__)
 
