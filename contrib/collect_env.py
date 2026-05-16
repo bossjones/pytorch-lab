@@ -113,7 +113,6 @@ def get_conda_packages(run_lambda):
                 "soumith",
                 "mkl",
                 "magma",
-                "mkl",
             }
         )
     )
