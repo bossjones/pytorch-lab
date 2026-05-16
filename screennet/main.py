@@ -443,7 +443,6 @@ def download_and_predict(
     device: torch.device = None,
 ):
     # Download custom image
-    urlparse(url).path
     fname = Path(urlparse(url).path).name
 
     # Setup custom image path
