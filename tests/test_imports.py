@@ -1,8 +1,8 @@
 """Import smoke test — guards the conda→uv package restructure (no more
 sys.path hacks) and the torch 2.x / numpy 2.x modernization.
 
-Excludes modules that execute work at import time (the two main.py CLIs and
-going_modular.train, which loads a dataset on import).
+Includes the two main.py CLIs and going_modular.train: post-hardening they
+import with zero side effects (see test_entrypoint_import_safety.py).
 """
 
 from __future__ import annotations
@@ -27,6 +27,9 @@ IMPORTABLE = [
     "screencropnet.ml_types",
     "screencropnet.data_set",
     "screencropnet.image_utils",
+    "going_modular.train",
+    "screennet.main",
+    "screencropnet.main",
 ]
 
 
