@@ -29,7 +29,7 @@ Sorted ascending by function coverage %. Files with no public functions are list
 | File | Pub funcs | Doc | Func % | Pub cls | Doc | mod? |
 |---|---:|---:|---:|---:|---:|:--:|
 | `screencropnet/image_utils.py` | 4 | 0 | 0.0% | 0 | 0 | no |
-| `screencropnet/test_predict.py` | 3 | 0 | 0.0% | 1 | 0 | yes |
+| `screencropnet/try_predict.py` | 3 | 0 | 0.0% | 1 | 0 | yes |
 | `tasks/_setup.py` | 3 | 0 | 0.0% | 0 | 0 | yes |
 | `going_modular/going_modular/model_builder.py` | 2 | 0 | 0.0% | 1 | 1 | yes |
 | `screencropnet/arch.py` | 2 | 0 | 0.0% | 1 | 0 | no |

@@ -187,7 +187,7 @@ after every numbered task; commit per task.
 - Policy: **no file-level `# ruff: noqa`**; only targeted
   `# noqa: <CODE>  # <reason>` where a pattern is genuinely intentional —
   enumerate every such line in the PR description.
-- Note: `screencropnet/test_predict.py` (135 errors) is a non-pytest manual
+- Note: `screencropnet/try_predict.py` (135 errors) is a non-pytest manual
   script (excluded by `testpaths`); clean it but flag relocating it to
   `examples/` as a follow-up (out of scope here).
 - `uv run ruff check .` → 0; commit Phase 2.
@@ -276,5 +276,5 @@ after every numbered task; commit per task.
 - The `.ipynb` reference notebooks are intentionally **not** committed; their
   knowledge is preserved in `ai_docs/screencropnet-assets.md`.
 - Out of scope (future): deduping the two identical `devices.py`; relocating
-  `screencropnet/test_predict.py` to `examples/`; tightening pyright to strict;
+  `screencropnet/try_predict.py` to `examples/`; tightening pyright to strict;
   real end-to-end training runs.
