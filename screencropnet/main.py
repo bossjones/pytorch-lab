@@ -2313,6 +2313,7 @@ def pred_and_store(
     # ic(class_names)
     ic(device)
     # 2. Create an empty list to store prediction dictionaires
+    fullsize_bboxes = []
 
     # 3. Loop through target paths
     for path in tqdm(paths):
