@@ -98,7 +98,7 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="corners"):
         box2_x2 = boxes_labels[..., 0:1] + boxes_labels[..., 2:3] / 2
         box2_y2 = boxes_labels[..., 1:2] + boxes_labels[..., 3:4] / 2
 
-    if box_format == "corners":
+    elif box_format == "corners":
         box1_x1 = boxes_preds[..., 0:1]
         box1_y1 = boxes_preds[..., 1:2]
         box1_x2 = boxes_preds[..., 2:3]
@@ -107,6 +107,8 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="corners"):
         box2_y1 = boxes_labels[..., 1:2]
         box2_x2 = boxes_labels[..., 2:3]
         box2_y2 = boxes_labels[..., 3:4]
+    else:
+        raise ValueError(f"Unknown box_format: {box_format!r}")
 
     x1 = torch.max(box1_x1, box2_x1)
     y1 = torch.max(box1_y1, box2_y1)
@@ -275,6 +277,8 @@ def mean_average_precision(
         # torch.trapz for numerical integration
         average_precisions.append(torch.trapz(precisions, recalls))
 
+    if len(average_precisions) == 0:
+        return 0.0
     return sum(average_precisions) / len(average_precisions)
 
 
