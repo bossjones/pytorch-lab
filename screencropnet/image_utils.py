@@ -29,13 +29,12 @@ def load_and_transform_image_for_prediction(
 ):
     img = safe_read_image(path)
 
-    if transform is not None:
-        img_transform: A.Compose = A.Compose(
+    if transform is None:
+        img_transform = A.Compose(
             [A.Resize(img_size, img_size)],
-            bbox_params=A.BboxParams(
-                format="pascal_voc", label_fields=["class_labels"]
-            ),
         )
+    else:
+        img_transform = transform
 
     return img, img_transform
 
