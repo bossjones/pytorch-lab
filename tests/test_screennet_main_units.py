@@ -9,6 +9,7 @@ Coverage targets (Tier 2):
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -371,10 +372,11 @@ def test_walk_through_dir_prints_correct_counts(tmp_path, capsys) -> None:
 
     m.walk_through_dir(tmp_path)
     captured = capsys.readouterr()
+    out = re.sub(r"\x1b\[[0-9;]*m", "", captured.out)
     # Root: 1 dir, 0 files
-    assert "1 directories" in captured.out
+    assert "1 directories" in out
     # Subdir: 0 dirs, 2 files
-    assert "2 images" in captured.out
+    assert "2 images" in out
 
 
 # ---------------------------------------------------------------------------
