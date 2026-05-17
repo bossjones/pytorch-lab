@@ -64,6 +64,15 @@ ipython: ## launch IPython REPL
 	uv run ipython
 
 # --- Dataset ----------------------------------------------------------------
+# FORCE is opt-in: unset by default. `make data-setup FORCE=1` (or
+# `FORCE=1 make data-setup`) overrides every idempotency guard below and
+# re-fetches classification + localization assets. Command-line/env vars
+# propagate through the $(MAKE) sub-invocations in data-setup automatically.
+FORCE ?=
+DATASET_DIR := ./scratch/datasets/twitter_facebook_tiktok
+DATASET_ZIP := ./scratch/datasets/twitter_facebook_tiktok.zip
+DATASET_URL := https://www.dropbox.com/s/8w1jkcvdzmh7khh/twitter_facebook_tiktok.zip?dl=1
+
 data-doctor: ## verify status of all expected dataset files and directories
 	uv run contrib/data_doctor.py
 
@@ -77,12 +86,32 @@ setup-dataset-scratch-env: ## create scratch/datasets/ directory layout
 	bash contrib/setup-dataset-scratch-env.sh
 
 download-dataset: setup-dataset-scratch-env ## download twitter/facebook/tiktok classification dataset
-	curl -L 'https://www.dropbox.com/s/8w1jkcvdzmh7khh/twitter_facebook_tiktok.zip?dl=1' > ./scratch/datasets/twitter_facebook_tiktok.zip
-	unzip -l ./scratch/datasets/twitter_facebook_tiktok.zip
+	@if [ -n "$(FORCE)" ]; then \
+		echo "[force] re-downloading dataset zip"; \
+		curl -L '$(DATASET_URL)' > $(DATASET_ZIP); \
+	elif [ -d "$(DATASET_DIR)" ]; then \
+		echo "[skip]  dataset already extracted at $(DATASET_DIR) (FORCE=1 to re-download)"; \
+	elif [ -f "$(DATASET_ZIP)" ]; then \
+		echo "[skip]  zip already present at $(DATASET_ZIP) (FORCE=1 to re-download)"; \
+	else \
+		curl -L '$(DATASET_URL)' > $(DATASET_ZIP); \
+	fi
+# unzip -l ./scratch/datasets/twitter_facebook_tiktok.zip
 
 unzip-dataset: ## unzip the classification dataset into scratch/datasets/
-	unzip ./scratch/datasets/twitter_facebook_tiktok.zip -d './scratch/datasets'
-	rm -fv ./scratch/datasets/twitter_facebook_tiktok.zip
+	@if [ -d "$(DATASET_DIR)" ] && [ -z "$(FORCE)" ]; then \
+		echo "[skip]  dataset already extracted at $(DATASET_DIR) (FORCE=1 to re-extract)"; \
+	else \
+		if [ -n "$(FORCE)" ]; then \
+			echo "[force] removing $(DATASET_DIR) before re-extract"; \
+			rm -rf "$(DATASET_DIR)"; \
+		fi; \
+		unzip -o $(DATASET_ZIP) -d ./scratch/datasets; \
+		echo "[keep]  zip retained at $(DATASET_ZIP) (run 'make clean-dataset-zip' to remove)"; \
+	fi
+
+clean-dataset-zip: ## remove the downloaded classification zip
+	rm -fv $(DATASET_ZIP)
 
 zip-dataset: ## re-zip the classification dataset
 	bash contrib/zip-dataset.sh
@@ -90,10 +119,10 @@ zip-dataset: ## re-zip the classification dataset
 
 # Localization (screencropnet) assets. Provenance: ai_docs/screencropnet-assets.md
 download-localization-dataset: ## download screencropnet localization dataset only
-	uv run contrib/fetch_screencropnet_assets.py --dataset
+	uv run contrib/fetch_screencropnet_assets.py --dataset $(if $(FORCE),--force,)
 
 fetch-assets: ## download screencropnet dataset, checkpoints, and sample image
-	uv run contrib/fetch_screencropnet_assets.py --all
+	uv run contrib/fetch_screencropnet_assets.py --all $(if $(FORCE),--force,)
 
 install-postgres: ## install PostgreSQL 14 via Homebrew
 	brew install postgresql@14
