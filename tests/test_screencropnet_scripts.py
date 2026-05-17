@@ -33,6 +33,9 @@ def test_get_bbox_returns_rectangle_patch() -> None:
 
     rect = get_bbox([10, 20, 110, 220], col="red", bbox_format="pascal_voc")
     assert isinstance(rect, Rectangle)
+    assert rect.get_xy() == pytest.approx((10, 20))      # origin at (xmin, ymin)
+    assert rect.get_width() == pytest.approx(100)        # xmax - xmin = 110 - 10
+    assert rect.get_height() == pytest.approx(200)       # ymax - ymin = 220 - 20
 
 
 # ---- show_bbox_example imports without side effects ----
