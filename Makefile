@@ -1,5 +1,6 @@
 .PHONY: setup lock sync env-works env-test test test-cov test-cov-html open-cov lint format typecheck check \
 	clean jupyter ipython \
+	data-doctor data-setup \
 	setup-dataset-scratch-env download-dataset unzip-dataset zip-dataset \
 	download-localization-dataset fetch-assets \
 	install-postgres label-studio \
@@ -63,6 +64,15 @@ ipython: ## launch IPython REPL
 	uv run ipython
 
 # --- Dataset ----------------------------------------------------------------
+data-doctor: ## verify status of all expected dataset files and directories
+	uv run contrib/data_doctor.py
+
+data-setup: ## fetch all datasets end to end (classification + localization)
+	$(MAKE) setup-dataset-scratch-env
+	$(MAKE) download-dataset
+	$(MAKE) unzip-dataset
+	$(MAKE) fetch-assets
+
 setup-dataset-scratch-env: ## create scratch/datasets/ directory layout
 	bash contrib/setup-dataset-scratch-env.sh
 
