@@ -9,6 +9,11 @@ Two production-style model subprojects share a common set of training utilities:
 | `screennet/` | Image classification (twitter / facebook / tiktok) | EfficientNet-B0 |
 | `screencropnet/` | Screenshot localization (bounding-box regression) | EfficientNet-B0 backbone |
 
+> `screencropnet`'s IoU / NMS / mAP evaluation helpers are adapted from the
+> Kaggle [*YOLOv3 for Pascal VOC*](https://www.kaggle.com/code/dqhdqmcttdqx/yolov3-for-pascal-voc/notebook)
+> notebook; the model itself is single-box bounding-box regression, not a full
+> YOLO network.
+
 ---
 
 ## Environment setup

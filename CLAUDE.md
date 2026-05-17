@@ -86,6 +86,11 @@ All tool config lives in the root `pyproject.toml` (`[tool.ruff]`, `[tool.pyrigh
 - `arch.py` / `ObjLocModel` — EfficientNet-B0 backbone from `timm`, outputs 4 bbox coordinates; trained with MSELoss
 - `data_set.py` / `ObjLocDataset` — loads images + Pascal VOC CSV annotations; applies albumentations transforms including bbox augmentation
 - `helpers.py` — IoU utilities (`find_intersection`, `find_jaccard_overlap`, `intersection_over_union`, `non_max_suppression`, `mean_average_precision`)
+  - `intersection_over_union` / `iou_width_height` / `non_max_suppression` /
+    `mean_average_precision` are ported from the Kaggle *YOLOv3 for Pascal VOC*
+    notebook (`# SOURCE:` at `screencropnet/helpers.py:59`) — a YOLOv3-derived
+    eval/post-processing layer only; `ObjLocModel` is plain single-box
+    regression, not a YOLO network.
 - `ml_types.py` — typed aliases (`ImageNdarrayBGR`, `ImageNdarrayHWC`, `TensorCHW`)
 - `main.py` — training/inference entry point; package-qualified imports like screennet
 - `devices.py` — identical device-selection module (not shared; each subproject is standalone)

@@ -220,6 +220,18 @@ evaluation, not during training loss computation**:
 - `non_max_suppression` — NMS on a list of scored boxes.
 - `mean_average_precision` — full mAP calculation.
 
+**Provenance — YOLOv3 lineage.** `iou_width_height`,
+`intersection_over_union`, `non_max_suppression`, and
+`mean_average_precision` are ported from the Kaggle
+[*YOLOv3 for Pascal VOC*](https://www.kaggle.com/code/dqhdqmcttdqx/yolov3-for-pascal-voc/notebook)
+notebook (see the `# SOURCE:` comment at `screencropnet/helpers.py:59`);
+`find_intersection` / `find_jaccard_overlap` come separately from sgrvinod's
+*a-PyTorch-Tutorial-to-Object-Detection* (`helpers.py:10`). This is a
+**YOLOv3-derived evaluation/post-processing utility layer only** — the
+`ObjLocModel` above is a single-box EfficientNet-B0 regressor (MSELoss; no
+anchors, grid cells, objectness, or Darknet backbone), not a full YOLO
+network.
+
 **Type aliases — `screencropnet/ml_types.py`.**
 
 ```python

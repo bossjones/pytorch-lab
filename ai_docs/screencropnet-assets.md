@@ -44,6 +44,20 @@ scratch/datasets/twitter_screenshots_localization_dataset/
 
 `labels_pascal_temp.csv` columns: `img_path,xmin,ymin,xmax,ymax`.
 
+## Model lineage
+
+`ObjLocModel` (`screencropnet/arch.py`) is a single-box EfficientNet-B0
+regressor — 4-coordinate output, `MSELoss`, no anchors / grid / objectness /
+Darknet backbone. Its detection and evaluation helpers in
+`screencropnet/helpers.py` (`iou_width_height`, `intersection_over_union`,
+`non_max_suppression`, `mean_average_precision`) are adapted from the Kaggle
+[*YOLOv3 for Pascal VOC*](https://www.kaggle.com/code/dqhdqmcttdqx/yolov3-for-pascal-voc/notebook)
+notebook (recorded by the `# SOURCE:` comment at `screencropnet/helpers.py:59`).
+`find_intersection` / `find_jaccard_overlap` are separately from sgrvinod's
+*a-PyTorch-Tutorial-to-Object-Detection* (`helpers.py:10`). Net: a
+YOLOv3-derived utility layer for evaluation/post-processing, not a full YOLO
+implementation.
+
 ## Related
 
 - Classification dataset (`twitter_facebook_tiktok.zip`) is a separate,
