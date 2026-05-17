@@ -8,6 +8,10 @@ import sys
 import re
 from pathlib import Path
 
+ALLOWED_ENV_PATHS = {
+    str(Path.home() / '.claude' / 'channels' / 'telegram' / '.env'),
+}
+
 def is_dangerous_rm_command(command):
     """
     Comprehensive detection of dangerous rm commands.
@@ -60,7 +64,9 @@ def is_env_file_access(tool_name, tool_input):
         if tool_name in ['Read', 'Edit', 'MultiEdit', 'Write']:
             file_path = tool_input.get('file_path', '')
             if '.env' in file_path and not file_path.endswith('.env.sample'):
-                return True
+                resolved = str(Path(file_path).expanduser().resolve())
+                if resolved not in ALLOWED_ENV_PATHS:
+                    return True
 
         # Check bash commands for .env file access
         elif tool_name == 'Bash':
@@ -77,7 +83,12 @@ def is_env_file_access(tool_name, tool_input):
 
             for pattern in env_patterns:
                 if re.search(pattern, command):
-                    return True
+                    if not any(
+                        allowed in command
+                        or allowed.replace(str(Path.home()), '~') in command
+                        for allowed in ALLOWED_ENV_PATHS
+                    ):
+                        return True
 
     return False
 
