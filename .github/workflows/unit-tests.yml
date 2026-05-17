@@ -1,0 +1,88 @@
+name: Unit Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        with:
+          version: "0.11.9"
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      - name: Run tests with coverage
+        id: pytest
+        shell: bash
+        run: |
+          set -o pipefail
+          make test-cov 2>&1 | tee pytest-output.txt
+        continue-on-error: true
+
+      - name: Generate clean coverage report
+        if: always()
+        shell: bash
+        run: |
+          if [ -f .coverage ]; then
+            uv run coverage report 2>&1 | tee coverage-report.txt
+          else
+            echo "No .coverage data produced (test collection likely failed)." > coverage-report.txt
+            tail -n 50 pytest-output.txt >> coverage-report.txt
+          fi
+
+      - name: Post coverage comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('coverage-report.txt', 'utf8');
+            const passed = '${{ steps.pytest.outcome }}' === 'success';
+            const icon = passed ? '✅' : '❌';
+            const label = passed ? 'Tests passed' : 'Tests failed';
+            const marker = '<!-- unit-test-coverage -->';
+            const body = `${marker}\n## ${icon} ${label}\n\n### Coverage\n\n\`\`\`\n${report.trim()}\n\`\`\``;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail job if tests failed
+        if: steps.pytest.outcome == 'failure'
+        run: exit 1

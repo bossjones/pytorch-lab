@@ -84,6 +84,17 @@ exclude = [".venv", "**/__pycache__", "scratch", "logs"]
 addopts = "--capture=no --disable-warnings"
 testpaths = ["tests"]
 
+# Coverage is opt-in (the `test-cov` Makefile target / CI) so plain
+# `make test` stays fast. `source` here lets bare `pytest --cov` and a later
+# plain `coverage report` measure the same four targets without flags.
+[tool.coverage.run]
+source = ["going_modular", "screennet", "screencropnet", "helper_functions"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
 [dependency-groups]
 dev = [
     "invoke>=3.0.3",
@@ -91,6 +102,7 @@ dev = [
     "jupyter>=1.1.1",
     "pyright>=1.1.409",
     "pytest>=9.0.3",
+    "pytest-cov>=6.0.0",
     "pytest-mock>=3.15.1",
     "ruff>=0.15.13",
 ]

@@ -1,4 +1,4 @@
-.PHONY: setup lock sync env-works env-test test lint format typecheck check \
+.PHONY: setup lock sync env-works env-test test test-cov lint format typecheck check \
 	clean jupyter ipython \
 	setup-dataset-scratch-env download-dataset unzip-dataset zip-dataset \
 	download-localization-dataset fetch-assets \
@@ -20,6 +20,9 @@ env-test: env-works
 # --- Quality ----------------------------------------------------------------
 test:
 	uv run pytest
+
+test-cov:
+	uv run pytest --cov --cov-report=term-missing
 
 lint:
 	uv run ruff check .
