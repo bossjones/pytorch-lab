@@ -4,6 +4,7 @@
 	setup-dataset-scratch-env download-dataset unzip-dataset zip-dataset \
 	download-localization-dataset fetch-assets \
 	install-postgres label-studio \
+	claude-telegram-channel \
 	help
 
 .DEFAULT_GOAL := help
@@ -62,6 +63,9 @@ jupyter: ## start Jupyter notebook server
 
 ipython: ## launch IPython REPL
 	uv run ipython
+
+claude-telegram-channel: ## run Claude with official Telegram channel plugin (auto mode)
+	claude --channels plugin:telegram@claude-plugins-official --enable-auto-mode
 
 # --- Dataset ----------------------------------------------------------------
 # FORCE is opt-in: unset by default. `make data-setup FORCE=1` (or
