@@ -14,9 +14,6 @@ import pandas as pd
 from icecream import ic
 from rich import print
 
-from screencropnet.main import df_to_table
-
-
 # -------------------------------------------------------
 # CSV_FILE = '/content/object-localization-dataset/train.csv'
 # DATA_DIR = '/content/object-localization-dataset/'

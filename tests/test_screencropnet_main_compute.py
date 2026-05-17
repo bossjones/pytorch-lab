@@ -17,7 +17,6 @@ import pandas as pd
 import pytest
 import torch
 import torch.nn as nn
-from PIL import Image
 from torch.utils.data import DataLoader, TensorDataset
 
 matplotlib.use("Agg")  # headless: no display, deterministic across machines
