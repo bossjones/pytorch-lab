@@ -370,7 +370,7 @@ def test_pred_and_store_empty_paths_returns_empty() -> None:
         model=None,
         device="cpu",
     )
-    assert result == [] or result is None
+    assert result == []  # Before fix: UnboundLocalError at print(fullsize_bboxes) when paths=[]
 
 
 if __name__ == "__main__":
