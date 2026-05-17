@@ -14,6 +14,8 @@ import pandas as pd
 from icecream import ic
 from rich import print
 
+from screencropnet.main import df_to_table  # noqa: F401  # re-exported for callers
+
 # -------------------------------------------------------
 # CSV_FILE = '/content/object-localization-dataset/train.csv'
 # DATA_DIR = '/content/object-localization-dataset/'
