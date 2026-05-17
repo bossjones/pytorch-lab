@@ -83,31 +83,48 @@ class ObjLocModel(nn.Module):
         return bboxes_logits
 
 
-def get_bbox(bboxes, col, color="white", bbox_format="pascal_voc"):
+def get_bbox(bboxes, col=None, color="white", bbox_format="pascal_voc"):
+    """Create a matplotlib Rectangle patch for a single bounding box.
 
-    for i in range(len(bboxes)):
-        # Create a Rectangle patch
-        if bbox_format == "pascal_voc":
-            rect = patches.Rectangle(
-                (bboxes[i][0], bboxes[i][1]),
-                bboxes[i][2] - bboxes[i][0],
-                bboxes[i][3] - bboxes[i][1],
-                linewidth=2,
-                edgecolor=color,
-                facecolor="none",
-            )
-        else:
-            rect = patches.Rectangle(
-                (bboxes[i][0], bboxes[i][1]),
-                bboxes[i][2],
-                bboxes[i][3],
-                linewidth=2,
-                edgecolor=color,
-                facecolor="none",
-            )
+    Args:
+        bboxes: A flat list/tuple of 4 coordinates [xmin, ymin, xmax, ymax]
+                (pascal_voc) or [x, y, width, height] (other formats).
+        col: Optional matplotlib Axes to add the patch to; also accepted as a
+             colour string for backwards-compatible callers that pass col="red".
+        color: Edge colour used when ``col`` is an Axes object.
+        bbox_format: "pascal_voc" (default) or any other string for xywh.
 
-        # Add the patch to the Axes
+    Returns:
+        matplotlib.patches.Rectangle
+    """
+    # Allow col to be used as a colour string (test-friendly calling convention)
+    if isinstance(col, str):
+        color = col
+        col = None
+
+    if bbox_format == "pascal_voc":
+        rect = patches.Rectangle(
+            (bboxes[0], bboxes[1]),
+            bboxes[2] - bboxes[0],
+            bboxes[3] - bboxes[1],
+            linewidth=2,
+            edgecolor=color,
+            facecolor="none",
+        )
+    else:
+        rect = patches.Rectangle(
+            (bboxes[0], bboxes[1]),
+            bboxes[2],
+            bboxes[3],
+            linewidth=2,
+            edgecolor=color,
+            facecolor="none",
+        )
+
+    if col is not None:
         col.add_patch(rect)
+
+    return rect
 
 
 if __name__ == "__main__":

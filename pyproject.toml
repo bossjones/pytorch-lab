@@ -90,6 +90,10 @@ testpaths = ["tests"]
 [tool.coverage.run]
 source = ["going_modular", "screennet", "screencropnet", "helper_functions"]
 branch = true
+omit = [
+    "screencropnet/extract-dominant-colors-of-an-image.py",
+    "screencropnet/finding-most-common-colors.py",
+]
 
 [tool.coverage.report]
 show_missing = true

@@ -14,40 +14,7 @@ import pandas as pd
 from icecream import ic
 from rich import print
 
-# from rich.console import Console
-from rich.table import Table
-
-# console = Console()
-
-
-def df_to_table(
-    pandas_dataframe: pd.DataFrame,
-    rich_table: Table,
-    show_index: bool = True,
-    index_name: str | None = None,
-) -> Table:
-    """Convert a pandas.DataFrame obj into a rich.Table obj.
-    Args:
-        pandas_dataframe (DataFrame): A Pandas DataFrame to be converted to a rich Table.
-        rich_table (Table): A rich Table that should be populated by the DataFrame values.
-        show_index (bool): Add a column with a row count to the table. Defaults to True.
-        index_name (str, optional): The column name to give to the index column. Defaults to None, showing no value.
-    Returns:
-        Table: The rich Table instance passed, populated with the DataFrame values."""
-
-    if show_index:
-        index_name = str(index_name) if index_name else ""
-        rich_table.add_column(index_name)
-
-    for column in pandas_dataframe.columns:
-        rich_table.add_column(str(column))
-
-    for index, value_list in enumerate(pandas_dataframe.values.tolist()):
-        row = [str(index)] if show_index else []
-        row += [str(x) for x in value_list]
-        rich_table.add_row(*row)
-
-    return rich_table
+from screencropnet.main import df_to_table
 
 
 # -------------------------------------------------------
@@ -79,60 +46,61 @@ EPOCHS = 40
 
 NUM_COR = 4
 
-# plt.ion()
+if __name__ == "__main__":
+    # plt.ion()
 
-df_dataset = pd.read_csv(CSV_FILE)
+    df_dataset = pd.read_csv(CSV_FILE)
 
-# table = Table(
-#     show_header=True,
-#     header_style="bold magenta",
-#     box=box.DOUBLE,
-#     expand=True,
-#     show_lines=True,
-#     show_edge=True,
-#     show_footer=True,
-# )
+    # table = Table(
+    #     show_header=True,
+    #     header_style="bold magenta",
+    #     box=box.DOUBLE,
+    #     expand=True,
+    #     show_lines=True,
+    #     show_edge=True,
+    #     show_footer=True,
+    # )
 
-# # Modify the table instance to have the data from the DataFrame
-# table = df_to_table(df_dataset, table)
+    # # Modify the table instance to have the data from the DataFrame
+    # table = df_to_table(df_dataset, table)
 
-# # Update the style of the table
-# table.row_styles = ["none", "dim"]
-# table.box = box.SIMPLE_HEAD
+    # # Update the style of the table
+    # table.row_styles = ["none", "dim"]
+    # table.box = box.SIMPLE_HEAD
 
-# console.print(table)
+    # console.print(table)
 
-try:
-    row = df_dataset.iloc[184]
-    print(row)
-    img_full_path: str = DATA_DIR + row.img_path
-    ic(img_full_path)
-    img = cv2.imread(img_full_path)
-    #  convert color image into RGB image
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    try:
+        row = df_dataset.iloc[184]
+        print(row)
+        img_full_path: str = DATA_DIR + row.img_path
+        ic(img_full_path)
+        img = cv2.imread(img_full_path)
+        #  convert color image into RGB image
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    # bounding box coordinates
-    pt1 = (row.xmin, row.ymin)
-    pt2 = (row.xmax, row.ymax)
+        # bounding box coordinates
+        pt1 = (row.xmin, row.ymin)
+        pt2 = (row.xmax, row.ymax)
 
-    # create bounding box on image
-    bnd_box_img = cv2.rectangle(img, pt1, pt2, (255, 0, 0), 2)
+        # create bounding box on image
+        bnd_box_img = cv2.rectangle(img, pt1, pt2, (255, 0, 0), 2)
 
-    # call imshow() using plt object
-    plt.imshow(bnd_box_img)
+        # call imshow() using plt object
+        plt.imshow(bnd_box_img)
 
-    # display that image
-    plt.show()
-except Exception as ex:
-    print(str(ex))
-    exc_type, exc_value, exc_traceback = sys.exc_info()
-    tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)
-    traceback_str = "".join(tb.format_exception_only())
-    print(f"Error Class: {str(ex.__class__)}")
+        # display that image
+        plt.show()
+    except Exception as ex:
+        print(str(ex))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)
+        traceback_str = "".join(tb.format_exception_only())
+        print(f"Error Class: {str(ex.__class__)}")
 
-    output = "[{}] {}: {}".format("UNEXPECTED", type(ex).__name__, ex)
-    print(output)
-    print(f"exc_type: {exc_type}")
-    print(f"exc_value: {exc_value}")
-    traceback.print_tb(exc_traceback)
-    bpdb.pm()
+        output = "[{}] {}: {}".format("UNEXPECTED", type(ex).__name__, ex)
+        print(output)
+        print(f"exc_type: {exc_type}")
+        print(f"exc_value: {exc_value}")
+        traceback.print_tb(exc_traceback)
+        bpdb.pm()
