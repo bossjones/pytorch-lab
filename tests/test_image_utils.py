@@ -23,10 +23,21 @@ def _write_tmp_image(tmp_path: Path) -> Path:
 
 # ---- load_and_transform_image_for_prediction: default transform=None ----
 def test_load_and_transform_with_default_transform(tmp_path: Path) -> None:
+    import albumentations as A
+
     img_path = _write_tmp_image(tmp_path)
     img, img_transform = iu.load_and_transform_image_for_prediction(str(img_path))
     assert isinstance(img, torch.Tensor)
-    assert img_transform is not None
+    assert isinstance(img_transform, A.Compose)
+
+
+def test_load_and_transform_with_explicit_transform(tmp_path: Path) -> None:
+    import albumentations as A
+
+    img_path = _write_tmp_image(tmp_path)
+    custom = A.Compose([A.Resize(64, 64)])
+    _, img_transform = iu.load_and_transform_image_for_prediction(str(img_path), transform=custom)
+    assert img_transform is custom
 
 
 # ---- convert_image_numpy_array_to_tensor: pure ----
@@ -46,7 +57,8 @@ def test_opencv_read_and_convert_returns_rgb_ndarray(tmp_path: Path) -> None:
     assert isinstance(out, np.ndarray)
     assert out.shape == (4, 6, 3)
     # BGR(255,0,0) -> RGB: red channel (index 0) should be 0, blue (2) 255
-    assert out[0, 0, 2] == 255
+    assert out[0, 0, 0] == 0   # red channel after BGR→RGB should be 0
+    assert out[0, 0, 2] == 255  # blue channel moves to index 2
 
 
 # ---- safe_read_image: tmp file -> tensor ----
@@ -55,6 +67,7 @@ def test_safe_read_image_returns_chw_tensor(tmp_path: Path) -> None:
     t = iu.safe_read_image(str(img_path))
     assert isinstance(t, torch.Tensor)
     assert t.shape[0] == 3
+    assert t.dtype == torch.float32
 
 
 # ---- real-asset smoke test ----
