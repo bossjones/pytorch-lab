@@ -1,11 +1,5 @@
 #!/usr/bin/env python
 
-# import bpdb; bpdb.set_trace()
-# import pdbr
-# import pdb
-# pdb = pdb.pdb
-
-# Try to get torchinfo, install it if it doesn't work
 import argparse
 import os
 import os.path
@@ -15,10 +9,6 @@ import random
 import shutil
 import socket
 
-# ---------------------------------------------------------------------------
-# Import rich and whatever else we need
-# %load_ext rich
-# %matplotlib inline
 import sys
 import warnings
 import zipfile
@@ -30,22 +20,18 @@ from urllib.parse import urlparse
 
 import albumentations as A
 
-# from rich_dataframe import prettify
+
 import better_exceptions
 import bpdb
 import cv2
 import matplotlib
 
-# ---------------------------------------------------------------------------
-# Continue with regular imports
 import matplotlib.pyplot as plt
 import mlxtend
 import numpy as np
 import pandas as pd
 import requests
 
-# ---------------------------------------------------------------------------
-# SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
@@ -76,11 +62,9 @@ from torchinfo import summary
 from tqdm.auto import tqdm
 from watermark import watermark
 
-# breakpoint()
 from going_modular import engine, utils  # pylint: disable=no-name-in-module
 from screencropnet import devices
 
-# Import accuracy metric
 from screencropnet.arch import ObjLocModel
 from screencropnet.data_set import ObjLocDataset
 from screencropnet.ml_types import ImageNdarrayBGR
@@ -93,6 +77,9 @@ assert int(mlxtend.__version__.split(".")[1]) >= 19, (
     "mlxtend verison should be 0.19.0 or higher"
 )
 
+# ---------------------------------------------------------------------------
+# SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
+
 
 def _install_exception_hooks() -> None:
     """Install pretty-traceback hooks. Called from main(), never at import."""
@@ -101,9 +88,6 @@ def _install_exception_hooks() -> None:
 
 
 console: Console = Console()
-
-CSV_FILE = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/labels_pascal_temp.csv"
-DATA_DIR = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/"
 
 BATCH_SIZE = 16
 # IMG_SIZE = 140
@@ -1227,17 +1211,28 @@ model_names = sorted(
 )
 # print(model_names)
 
-shared_datasets_path_api = pathlib.Path(os.path.expanduser("~/Downloads/datasets"))
-shared_datasets_path = os.path.abspath(str(shared_datasets_path_api))
-DEFAULT_DATASET_DIR = Path(f"{shared_datasets_path}")
+# main.py lives at <repo>/screencropnet/main.py → parents[1] is repo root.
+# Canonical dataset (populated by `make fetch-assets` /
+# contrib/fetch_screencropnet_assets.py) lives under scratch/datasets/.
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+DEFAULT_DATASET_DIR = _REPO_ROOT / "scratch" / "datasets"
 
-
-CSV_FILE_PATH_API = pathlib.Path(
-    os.path.expanduser(f"~/Downloads/datasets/{DATASET_FOLDER_NAME}")
-)
-CSV_FILE_PATH = os.path.abspath(str(CSV_FILE_PATH_API))
+# Module-level defaults; re-derived from args.data in main_worker() via
+# _resolve_dataset_paths() so the `data` CLI arg is actually honored.
+CSV_FILE_PATH = str(DEFAULT_DATASET_DIR / DATASET_FOLDER_NAME)
 CSV_FILE = f"{CSV_FILE_PATH}/labels_pascal_temp.csv"
+DATA_DIR = f"{CSV_FILE_PATH}/"
 IMAGE_DATASET_DIR_PATH = f"{CSV_FILE_PATH}/train_images"
+
+
+def _resolve_dataset_paths(data_dir: str) -> None:
+    """Re-derive dataset path globals from the resolved --data directory."""
+    global CSV_FILE, DATA_DIR, CSV_FILE_PATH, IMAGE_DATASET_DIR_PATH
+    base = pathlib.Path(data_dir).expanduser().resolve() / DATASET_FOLDER_NAME
+    CSV_FILE_PATH = str(base)
+    CSV_FILE = str(base / "labels_pascal_temp.csv")
+    DATA_DIR = f"{base}/"
+    IMAGE_DATASET_DIR_PATH = str(base / "train_images")
 
 # --------------------------------------------------------------------------------------------
 
@@ -1586,12 +1581,22 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     else:
         device = torch.device("cpu")
 
+    _resolve_dataset_paths(args.data)
+
     # BOSSNEW
     # Data loading code
+    inference_only = bool(
+        args.predict or args.autocrop or args.download_and_predict
+    )
     if args.dummy:
         print("=> Dummy data is used!")
         datasets.FakeData(1281167, (3, 224, 224), 1000, transforms.ToTensor())
         datasets.FakeData(50000, (3, 224, 224), 1000, transforms.ToTensor())
+    elif inference_only:
+        print(
+            "=> Inference-only mode (predict/autocrop): "
+            "skipping dataset/CSV load and DataLoader construction"
+        )
     else:
         df_dataset = pd.read_csv(CSV_FILE)
 
