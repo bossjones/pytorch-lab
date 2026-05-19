@@ -1,166 +1,93 @@
 #!/usr/bin/env python
 
-# import bpdb; bpdb.set_trace()
-# import pdbr
-# import pdb
-# pdb = pdb.pdb
-
-import random
-import socket
+import argparse
 import os
 import os.path
 import pathlib
 import platform
-from tqdm.auto import tqdm
-
-# ---------------------------------------------------------------------------
-# Import rich and whatever else we need
-# %load_ext rich
-# %matplotlib inline
-import sys
-
-import bpdb
-import pandas as pd
-
-# from rich_dataframe import prettify
-
-
-extra_modules_path_api = pathlib.Path("../going_modular")
-extra_modules_path = os.path.abspath(str(extra_modules_path_api))
-# print(extra_modules_path)
-
-# sys.path.insert(1, extra_modules_path)
-sys.path.append(extra_modules_path)
-sys.path.append("../")
-# import better_exceptions
-import better_exceptions
-import devices  # pylint: disable=import-error
-import rich
-
-# ---------------------------------------------------------------------------
-import torch
-import torchvision
-
-from rich.traceback import install
-
-install(show_locals=True)
-from icecream import ic
-from rich import box, inspect, print
-
-from rich.console import Console
-from rich.table import Table
-from torchvision import datasets, transforms
-
-better_exceptions.hook()
-
-console: Console = Console()
-# ---------------------------------------------------------------------------
-
-
-assert int(torch.__version__.split(".")[1]) >= 12, "torch version should be 1.12+"
-assert (
-    int(torchvision.__version__.split(".")[1]) >= 13
-), "torchvision version should be 0.13+"
-# print(f"torch version: {torch.__version__}")
-# print(f"torchvision version: {torchvision.__version__}")
-# ---------------------------------------------------------------------------
-
-# Continue with regular imports
-import matplotlib.pyplot as plt
-import mlxtend
-import torch
-import torchmetrics
-import torchvision
-from torch import nn
-from torchinfo import summary
-from torchvision import transforms
-
-# breakpoint()
-from going_modular import data_setup, engine, utils  # pylint: disable=no-name-in-module
-
-# Try to get torchinfo, install it if it doesn't work
-
-
-# print(f"mlxtend version: {mlxtend.__version__}")
-assert (
-    int(mlxtend.__version__.split(".")[1]) >= 19
-), "mlxtend verison should be 0.19.0 or higher"
-
-import argparse
-import os
 import random
 import shutil
+import socket
+
+import sys
 import warnings
 import zipfile
-from enum import Enum
+from enum import Enum, IntEnum
 from itertools import product
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import List, Optional, Tuple, Union, Dict
 from urllib.parse import urlparse
 
+import albumentations as A
+
+
+import better_exceptions
+import bpdb
+import cv2
 import matplotlib
+
+import matplotlib.pyplot as plt
+import mlxtend
 import numpy as np
-import numpy.typing as npt
+import pandas as pd
 import requests
 
-# SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
 import torch
-import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.parallel
 import torch.optim
+import torch.profiler
 import torch.utils.data
 import torch.utils.data.distributed
+import torchvision
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
+import torchvision.transforms.functional as FT
+import torchvision.transforms.functional as pytorch_transforms_functional
+from fastai.data.transforms import get_image_files
+from icecream import ic
 from mlxtend.plotting import plot_confusion_matrix
-import PIL
 from PIL import Image
-from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import Subset
+from rich import box, print
+from rich.console import Console
+from rich.table import Table
+from rich.traceback import install
+from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
-from torchmetrics import ConfusionMatrix
+from torchinfo import summary
+from tqdm.auto import tqdm
 from watermark import watermark
 
-# Import accuracy metric
-from helper_functions import (  # Note: could also use torchmetrics.Accuracy()
-    accuracy_fn,
-    plot_loss_curves,
+from going_modular import engine, utils  # pylint: disable=no-name-in-module
+from screencropnet import devices
+
+from screencropnet.arch import ObjLocModel
+from screencropnet.data_set import ObjLocDataset
+from screencropnet.ml_types import ImageNdarrayBGR
+
+assert int(torch.__version__.split(".")[1]) >= 12, "torch version should be 1.12+"
+assert int(torchvision.__version__.split(".")[1]) >= 13, (
+    "torchvision version should be 0.13+"
 )
-import torch.profiler
-import fastai
-from fastai.data.transforms import get_image_files
-import torchvision.transforms.functional as pytorch_transforms_functional
-import cv2
+assert int(mlxtend.__version__.split(".")[1]) >= 19, (
+    "mlxtend verison should be 0.19.0 or higher"
+)
 
-import pandas as pd
-import numpy as np
-import cv2
-import matplotlib.pyplot as plt
-import torch
-from tqdm.notebook import tqdm
-
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from data_set import ObjLocDataset
-import albumentations as A
-from arch import ObjLocModel
-from enum import IntEnum
-
-from ml_types import ImageNdarrayBGR, ImageNdarrayHWC
-
-import torchvision.transforms.functional as FT
-from PIL import Image
-from typing import Union
+# ---------------------------------------------------------------------------
+# SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
 
 
-CSV_FILE = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/labels_pascal_temp.csv"
-DATA_DIR = "/Users/malcolm/Downloads/datasets/twitter_screenshots_localization_dataset/"
+def _install_exception_hooks() -> None:
+    """Install pretty-traceback hooks. Called from main(), never at import."""
+    install(show_locals=True)
+    better_exceptions.hook()
+
+
+console: Console = Console()
 
 BATCH_SIZE = 16
 # IMG_SIZE = 140
@@ -182,15 +109,13 @@ NUM_COR = 4
 NUM_WORKERS = os.cpu_count()
 
 
-# SOURCE: https://github.com/pytorch/pytorch/issues/78924
-torch.set_num_threads(1)
-
 MODEL_NAME = "ScreenCropNetV1"
 DATASET_FOLDER_NAME = "twitter_screenshots_localization_dataset"
 CONFIG_IMAGE_SIZE = (224, 224)
 
 OPENCV_GREEN = (0, 255, 0)
 OPENCV_RED = (255, 0, 0)
+
 
 # --------------------------------------------------------------------------------
 # SOURCE FOR THIS ENTIRE BLOCK
@@ -202,7 +127,8 @@ def xy_to_cxcy(xy):
     :return: bounding boxes in center-size coordinates, a tensor of size (n_boxes, 4)
     """
     return torch.cat(
-        [(xy[:, 2:] + xy[:, :2]) / 2, xy[:, 2:] - xy[:, :2]], 1  # c_x, c_y
+        [(xy[:, 2:] + xy[:, :2]) / 2, xy[:, 2:] - xy[:, :2]],
+        1,  # c_x, c_y
     )  # w, h
 
 
@@ -316,7 +242,7 @@ def resize_image_and_bbox(
 
 
 def display_image_grid(
-    images_filepaths: List[str], cols=5, model=None, device=None, args=None
+    images_filepaths: list[str], cols=5, model=None, device=None, args=None
 ):
     rows = len(images_filepaths) // cols
     # figure, ax = plt.subplots(nrows=rows, ncols=cols, figsize=(12, 6))
@@ -336,7 +262,6 @@ def display_image_grid(
 
         starting_point_fullsize = pt1_fullsize
         end_point_fullsize = pt2_fullsize
-        color = OPENCV_RED
         thickness = 2
 
         out_img = cv2.rectangle(
@@ -352,11 +277,12 @@ def display_image_grid(
     plt.tight_layout()
     plt.show()
 
+
 def get_pixel_rgb(image_pil: Image):
     r, g, b = image_pil.getpixel((1, 1))
-    ic(r,g,b)
+    ic(r, g, b)
 
-    if (r,g,b) == (255, 255, 255):
+    if (r, g, b) == (255, 255, 255):
         color = "white"
     else:
         color = "darkmode"
@@ -394,7 +320,7 @@ def resize_and_pillarbox(image_pil: Image, width: int, height: int, background="
 
 
 def handle_autocrop(
-    images_filepaths: List[str],
+    images_filepaths: list[str],
     cols=5,
     model=None,
     device=None,
@@ -402,7 +328,7 @@ def handle_autocrop(
     resize=False,
 ):
     cropped_image_file_paths = []
-    for i, image_filepath in enumerate(images_filepaths):
+    for _i, image_filepath in enumerate(images_filepaths):
         image, bboxes = predict_from_file(image_filepath, model, device, args)
         img_as_array = np.asarray(image)
         img_as_array = cv2.cvtColor(img_as_array, cv2.COLOR_RGB2BGR)
@@ -820,11 +746,10 @@ def download_and_predict(
     url: str,
     model: torch.nn.Module,
     data_path: pathlib.PosixPath,
-    class_names: List[str],
+    class_names: list[str],
     device: torch.device = None,
 ):
     # Download custom image
-    urlparse(url).path
     fname = Path(urlparse(url).path).name
 
     # Setup custom image path
@@ -853,7 +778,7 @@ def download_and_predict(
 
 def show_confusion_matrix_helper(
     cmat: np.ndarray,
-    class_names: List[str],
+    class_names: list[str],
     to_disk: bool = True,
     fname: str = "plot.png",
 ):
@@ -861,7 +786,7 @@ def show_confusion_matrix_helper(
     fig, ax = plot_confusion_matrix(
         conf_mat=cmat,
         class_names=class_names,
-        norm_colormap=matplotlib.colors.LogNorm()
+        norm_colormap=matplotlib.colors.LogNorm(),
         # normed colormaps highlight the off-diagonals
         # for high-accuracy models better
     )
@@ -879,8 +804,7 @@ def compute_accuracy(
     model.eval()
     with torch.no_grad():
         correct_pred, num_examples = 0, 0
-        for i, (features, targets) in enumerate(data_loader):
-
+        for _i, (features, targets) in enumerate(data_loader):
             features = features.to(device)
             targets = targets.to(device)
 
@@ -919,9 +843,7 @@ def compute_confusion_matrix(
 
     all_targets, all_predictions = [], []
     with torch.no_grad():
-
-        for i, (features, targets) in enumerate(data_loader):
-
+        for _i, (features, targets) in enumerate(data_loader):
             features = features.to(device)
             targets = targets
             logits = model(features)
@@ -941,7 +863,7 @@ def compute_confusion_matrix(
             class_labels = np.array([class_labels[0], 1])
     n_labels = class_labels.shape[0]
     lst = []
-    z = list(zip(all_targets, all_predictions))
+    z = list(zip(all_targets, all_predictions, strict=False))
     for combi in product(class_labels, repeat=2):
         lst.append(z.count(combi))
     mat = np.asarray(lst)[:, None].reshape(n_labels, n_labels)
@@ -952,7 +874,7 @@ def run_confusion_matrix(
     model: torch.nn.Module,
     test_dataloader: torch.utils.data.DataLoader,
     device: torch.device,
-    class_names: List[str],
+    class_names: list[str],
 ):
 
     cmat = compute_confusion_matrix(model, test_dataloader, device)
@@ -978,7 +900,7 @@ def run_validate(
 
     # End the timer and print out how long it took
     end_time = timer()
-    print(f"[INFO] Total testing time: {end_time-start_time:.3f} seconds")
+    print(f"[INFO] Total testing time: {end_time - start_time:.3f} seconds")
     ic(test_loss)
     ic(test_acc)
 
@@ -1008,7 +930,7 @@ def run_train(
     ic(dataloader_name)
 
     # Setup training and save the results
-    results = engine.train_localization(
+    engine.train_localization(
         model=model,
         trainloader=trainloader,
         validloader=validloader,
@@ -1029,16 +951,12 @@ def run_train(
     machine = f"{socket.gethostname()}"
 
     # Print out timer and results
-    total_train_time = print_train_time(
-        start=start_time, end=end_time, device=device, machine=machine
-    )
+    print_train_time(start=start_time, end=end_time, device=device, machine=machine)
 
     # 10. Save the model to file so we can get back the best model
     save_filepath = f"{MODEL_NAME}_{model.name}_{dataloader_name}_{epochs}_epochs.pth"
     utils.save_model(model=model, target_dir="models", model_name=save_filepath)
     print("-" * 50 + "\n")
-
-    dataset_name = DATASET_FOLDER_NAME
 
     # write_training_results_to_csv(
     #     machine,
@@ -1122,7 +1040,7 @@ def write_training_results_to_csv(
     )
 
 
-def write_predict_results_to_csv(pred_dicts: List[Dict], args: argparse.Namespace):
+def write_predict_results_to_csv(pred_dicts: list[dict], args: argparse.Namespace):
     # Create results dict
     pred_df = pd.DataFrame(pred_dicts)
     pred_df.drop(columns=["class_name", "correct"], inplace=True)
@@ -1138,7 +1056,7 @@ def df_to_table(
     pandas_dataframe: pd.DataFrame,
     rich_table: Table,
     show_index: bool = True,
-    index_name: Optional[str] = None,
+    index_name: str | None = None,
 ) -> Table:
     """Convert a pandas.DataFrame obj into a rich.Table obj.
     Args:
@@ -1225,14 +1143,14 @@ def clean_dir_images(image_path):
         try:
             f.unlink()
         except OSError as e:
-            print("Error: %s : %s" % (f, e.strerror))
+            print(f"Error: {f} : {e.strerror}")
 
 
 def clean_dirs_in_dir(image_path):
     try:
         shutil.rmtree(image_path)
     except OSError as e:
-        print("Error: %s : %s" % (image_path, e.strerror))
+        print(f"Error: {image_path} : {e.strerror}")
 
 
 def setup_workspace(data_path: pathlib.PosixPath, image_path: pathlib.PosixPath):
@@ -1266,10 +1184,14 @@ def get_model_summary(
     model: torch.nn.Module,
     input_size: tuple = (32, 3, 224, 224),
     verbose: int = 0,
-    col_names: List[str] = ["input_size", "output_size", "num_params", "trainable"],
+    col_names: list[str] | None = None,
     col_width: int = 20,
-    row_settings: List[str] = ["var_names"],
+    row_settings: list[str] | None = None,
 ):
+    if col_names is None:
+        col_names = ["input_size", "output_size", "num_params", "trainable"]
+    if row_settings is None:
+        row_settings = ["var_names"]
     print(f"Getting model summary for -> {model}")
     # # Do a summary *after* freezing the features and changing the output classifier layer (uncomment for actual output)
     summary(
@@ -1289,17 +1211,28 @@ model_names = sorted(
 )
 # print(model_names)
 
-shared_datasets_path_api = pathlib.Path(os.path.expanduser("~/Downloads/datasets"))
-shared_datasets_path = os.path.abspath(str(shared_datasets_path_api))
-DEFAULT_DATASET_DIR = Path(f"{shared_datasets_path}")
+# main.py lives at <repo>/screencropnet/main.py → parents[1] is repo root.
+# Canonical dataset (populated by `make fetch-assets` /
+# contrib/fetch_screencropnet_assets.py) lives under scratch/datasets/.
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+DEFAULT_DATASET_DIR = _REPO_ROOT / "scratch" / "datasets"
 
-
-CSV_FILE_PATH_API = pathlib.Path(
-    os.path.expanduser(f"~/Downloads/datasets/{DATASET_FOLDER_NAME}")
-)
-CSV_FILE_PATH = os.path.abspath(str(CSV_FILE_PATH_API))
+# Module-level defaults; re-derived from args.data in main_worker() via
+# _resolve_dataset_paths() so the `data` CLI arg is actually honored.
+CSV_FILE_PATH = str(DEFAULT_DATASET_DIR / DATASET_FOLDER_NAME)
 CSV_FILE = f"{CSV_FILE_PATH}/labels_pascal_temp.csv"
+DATA_DIR = f"{CSV_FILE_PATH}/"
 IMAGE_DATASET_DIR_PATH = f"{CSV_FILE_PATH}/train_images"
+
+
+def _resolve_dataset_paths(data_dir: str) -> None:
+    """Re-derive dataset path globals from the resolved --data directory."""
+    global CSV_FILE, DATA_DIR, CSV_FILE_PATH, IMAGE_DATASET_DIR_PATH
+    base = pathlib.Path(data_dir).expanduser().resolve() / DATASET_FOLDER_NAME
+    CSV_FILE_PATH = str(base)
+    CSV_FILE = str(base / "labels_pascal_temp.csv")
+    DATA_DIR = f"{base}/"
+    IMAGE_DATASET_DIR_PATH = str(base / "train_images")
 
 # --------------------------------------------------------------------------------------------
 
@@ -1518,6 +1451,9 @@ best_acc1 = 0
 
 
 def main():
+    _install_exception_hooks()
+    # SOURCE: https://github.com/pytorch/pytorch/issues/78924
+    torch.set_num_threads(1)
     args = parser.parse_args()
     ic(args)
 
@@ -1527,7 +1463,8 @@ def main():
     if args.gpu is not None:
         warnings.warn(
             "You have chosen a specific GPU. This will completely "
-            "disable data parallelism."
+            "disable data parallelism.",
+            stacklevel=2,
         )
 
     if args.dist_url == "env://" and args.world_size == -1:
@@ -1555,11 +1492,8 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     global best_acc1
     args.gpu = gpu
 
-    y_preds = []
-    y_pred_tensor = None
-
     if args.gpu is not None:
-        print("Use GPU: {} for training".format(args.gpu))
+        print(f"Use GPU: {args.gpu} for training")
 
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:
@@ -1576,7 +1510,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         )
     # create model
     if args.pretrained:
-        ic("=> using pre-trained model '{}'".format(args.arch))
+        ic(f"=> using pre-trained model '{args.arch}'")
         # breakpoint()
         device = devices.get_optimal_device(args)
 
@@ -1587,7 +1521,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         model.name = "ObjLocModelV1"
         model.to(device)
     else:
-        ic("=> creating model '{}'".format(args.arch))
+        ic(f"=> creating model '{args.arch}'")
         device = devices.get_optimal_device(args)
         model = ObjLocModel()
         model.name = "ObjLocModelV1"
@@ -1639,7 +1573,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
     if torch.cuda.is_available():
         if args.gpu:
-            device = torch.device("cuda:{}".format(args.gpu))
+            device = torch.device(f"cuda:{args.gpu}")
         else:
             device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -1647,18 +1581,23 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     else:
         device = torch.device("cpu")
 
+    _resolve_dataset_paths(args.data)
+
     # BOSSNEW
     # Data loading code
+    inference_only = bool(
+        args.predict or args.autocrop or args.download_and_predict
+    )
     if args.dummy:
         print("=> Dummy data is used!")
-        train_dataset = datasets.FakeData(
-            1281167, (3, 224, 224), 1000, transforms.ToTensor()
-        )
-        val_dataset = datasets.FakeData(
-            50000, (3, 224, 224), 1000, transforms.ToTensor()
+        datasets.FakeData(1281167, (3, 224, 224), 1000, transforms.ToTensor())
+        datasets.FakeData(50000, (3, 224, 224), 1000, transforms.ToTensor())
+    elif inference_only:
+        print(
+            "=> Inference-only mode (predict/autocrop): "
+            "skipping dataset/CSV load and DataLoader construction"
         )
     else:
-
         df_dataset = pd.read_csv(CSV_FILE)
 
         train_df, valid_df = train_test_split(
@@ -1735,14 +1674,14 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
             trainset, batch_size=BATCH_SIZE, shuffle=False
         )
 
-        print("Total no. batches in trainloader : {}".format(len(trainloader)))
-        print("Total no. batches in validloader : {}".format(len(validloader)))
+        print(f"Total no. batches in trainloader : {len(trainloader)}")
+        print(f"Total no. batches in validloader : {len(validloader)}")
 
-        for images, bboxes in trainloader:
+        for images, bboxes in trainloader:  # noqa: B007  # first-batch peek; images/bboxes used after the loop
             break
 
-        print("Shape of one batch images : {}".format(images.shape))
-        print("Shape of one batch bboxes : {}".format(bboxes.shape))
+        print(f"Shape of one batch images : {images.shape}")
+        print(f"Shape of one batch bboxes : {bboxes.shape}")
 
     ic(next(model.parameters()).device)
 
@@ -1756,13 +1695,8 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
-            if args.gpu is None:
-                checkpoint = torch.load(args.resume)
-            elif torch.cuda.is_available():
-                # Map model to be loaded to specified single gpu.
-                loc = "cuda:{}".format(args.gpu)
-                checkpoint = torch.load(args.resume, map_location=loc)
+            print(f"=> loading checkpoint '{args.resume}'")
+            checkpoint = load_checkpoint(args.resume, args.gpu)
             args.start_epoch = checkpoint["epoch"]
             best_acc1 = checkpoint["best_acc1"]
             if args.gpu is not None:
@@ -1777,16 +1711,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
                 )
             )
         else:
-            print("=> no checkpoint found at '{}'".format(args.resume))
-
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        val_sampler = torch.utils.data.distributed.DistributedSampler(
-            val_dataset, shuffle=False, drop_last=True
-        )
-    else:
-        train_sampler = None
-        val_sampler = None
+            print(f"=> no checkpoint found at '{args.resume}'")
 
     if args.info:
         info(args, dataset_root_dir=IMAGE_DATASET_DIR_PATH)
@@ -1871,7 +1796,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         print(" Running test command ...")
         images_filepaths = []
 
-        for index, row in trainloader.dataset.df.iterrows():
+        for _index, row in trainloader.dataset.df.iterrows():
             path = os.path.join(f"{DATA_DIR}/", row["img_path"])
             # print(path)
             images_filepaths.append(path)
@@ -1879,7 +1804,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         # get random set of images
         test_images_filepaths = []
 
-        for i in range(10):
+        for _i in range(10):
             # some_image = random.choice(images_filepaths)
             idx = random.randint(0, len(images_filepaths))
             ic(idx)
@@ -1895,10 +1820,9 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
         images_filepaths = []
         if is_file(path_to_image_from_cli):
-
             images_filepaths.append(path_to_image_from_cli)
 
-            cropped_paths = handle_autocrop(
+            handle_autocrop(
                 images_filepaths, cols=5, model=model, device=device, resize=args.resize
             )
 
@@ -1919,10 +1843,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
     path_to_model = save_model_to_disk(f"{MODEL_NAME}", model)
 
-    loaded_model_for_inference: nn.Module
-    loaded_model_for_inference = run_get_model_for_inference(
-        model, device, path_to_model, args
-    )
+    run_get_model_for_inference(model, device, path_to_model, args)
 
     # ic("lets make 3 predictions on some random images")
     # get_random_perdictions_and_plots(
@@ -1962,7 +1883,7 @@ class Summary(Enum):
     COUNT = 3
 
 
-class AverageMeter(object):
+class AverageMeter:
     """Computes and stores the average and current value"""
 
     def __init__(self, name, fmt=":f", summary_type=Summary.AVERAGE):
@@ -2010,12 +1931,12 @@ class AverageMeter(object):
         elif self.summary_type is Summary.COUNT:
             fmtstr = "{name} {count:.3f}"
         else:
-            raise ValueError("invalid summary type %r" % self.summary_type)
+            raise ValueError(f"invalid summary type {self.summary_type!r}")
 
         return fmtstr.format(**self.__dict__)
 
 
-class ProgressMeter(object):
+class ProgressMeter:
     def __init__(self, num_batches, meters, prefix=""):
         self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
         self.meters = meters
@@ -2062,12 +1983,14 @@ def accuracy(output: torch.Tensor, target: torch.Tensor, topk=(1,)):
 def get_random_images_from_dataset(
     model: torch.nn.Module,
     test_dir: pathlib.PosixPath,
-    class_names: List[str],
+    class_names: list[str],
     num_images_to_plot: int = 3,
     device: torch.device = None,
-    y_preds: List[torch.Tensor] = [],
+    y_preds: list[torch.Tensor] | None = None,
     y_pred_tensor: torch.Tensor = None,
 ):
+    if y_preds is None:
+        y_preds = []
 
     # Get a random list of image paths from test set
     import random
@@ -2098,17 +2021,20 @@ def get_random_images_from_dataset(
 # y_preds = []
 # y_pred_tensor = None
 
+
 # 1. Take in a trained model, class names, image path, image size, a transform and target device
 def pred_and_plot_image(
     model: torch.nn.Module,
     image_path: str,
-    class_names: List[str],
-    image_size: Tuple[int, int] = (224, 224),
+    class_names: list[str],
+    image_size: tuple[int, int] = (224, 224),
     transform: torchvision.transforms = None,
     device: torch.device = None,
-    y_preds: List[torch.Tensor] = [],
+    y_preds: list[torch.Tensor] | None = None,
     y_pred_tensor: torch.Tensor = None,
 ):
+    if y_preds is None:
+        y_preds = []
 
     # 2. Open image
     img = Image.open(image_path)
@@ -2153,7 +2079,7 @@ def pred_and_plot_image(
     ic(target_image_pred_probs)
     y_preds.append(target_image_pred_probs.cpu())
     # boss: Concatenate list of predictions into a tensor
-    y_pred_tensor = torch.cat(y_preds)
+    torch.cat(y_preds)
 
     # 9. Convert prediction probabilities -> prediction labels
     target_image_pred_label = torch.argmax(target_image_pred_probs, dim=1)
@@ -2173,7 +2099,7 @@ def pred_and_plot_image(
 
 
 # wrapper function of common code
-def run_save_model_for_inference(model: torch.nn.Module) -> Tuple[pathlib.PosixPath]:
+def run_save_model_for_inference(model: torch.nn.Module) -> tuple[pathlib.PosixPath]:
     """Save model to disk
 
     Args:
@@ -2231,7 +2157,7 @@ def save_model_to_disk(my_model_name: str, model: torch.nn.Module):
         obj=model.state_dict(),  # only saving the state_dict() only saves the learned parameters
         f=MODEL_SAVE_PATH,
     )
-    print("Model saved to path {} successfully.".format(MODEL_SAVE_PATH))
+    print(f"Model saved to path {MODEL_SAVE_PATH} successfully.")
     return MODEL_SAVE_PATH
 
 
@@ -2241,9 +2167,9 @@ def load_model_for_inference(
 ) -> nn.Module:
     model = ObjLocModel()
     model.name = "ObjLocModelV1"
-    model.load_state_dict(torch.load(save_path, map_location=device))
+    model.load_state_dict(torch.load(save_path, map_location=device, weights_only=True))
     model.eval()
-    print("Model loaded from path {} successfully.".format(save_path))
+    print(f"Model loaded from path {save_path} successfully.")
     # Get the model size in bytes then convert to megabytes
     model_size = Path(save_path).stat().st_size // (1024 * 1024)
     print(f"{save_path} | feature extractor model size: {model_size} MB")
@@ -2255,10 +2181,10 @@ def load_model_for_inference(
 # SOURCE: https://github.com/a-sasikumar/image_caption_errors/blob/d583dc77cfa9938bb15297b3096a959fe6084b66/models/model.py
 def load_model_from_disk(save_path: str, empty_model: nn.Module) -> nn.Module:
     # Loading Model for Inference
-    empty_model.load_state_dict(torch.load(save_path))
+    empty_model.load_state_dict(torch.load(save_path, weights_only=True))
     # Remember that you must call model.eval() to set dropout and batch normalization layers to evaluation mode before running inference. Failing to do this will yield inconsistent inference results.
     empty_model.eval()
-    print("Model loaded from path {} successfully.".format(save_path))
+    print(f"Model loaded from path {save_path} successfully.")
     return empty_model
 
 
@@ -2267,7 +2193,7 @@ def plot_image_with_predicted_label(
     img: Image = None,
     target_image_pred_label: torch.Tensor = None,
     target_image_pred_probs: torch.Tensor = None,
-    class_names: List[str] = None,
+    class_names: list[str] = None,
     fname: str = "plot.png",
 ):
     # 10. Plot image with predicted label and probability
@@ -2344,18 +2270,12 @@ def info(args, dataset_root_dir=""):
     sys.exit(0)
 
 
-# func to save model checkpoint
-# SOURCE: https://github.com/PineAppleUser/CVprojects/blob/ad49656a0a69354c134554a93d90e07913aa0dab/segmentationLungs/utils.py
-def save_checkpoint(state, filename="saved_checkpoint.pth.tar"):
-    print("=> Saving checkpoint")
-    torch.save(state, filename)
-
-
-# func to load model checkpoint
-# SOURCE: https://github.com/PineAppleUser/CVprojects/blob/ad49656a0a69354c134554a93d90e07913aa0dab/segmentationLungs/utils.py
-def load_checkpoint(checkpoint, model):
-    print("=> Loading checkpoint")
-    model.load_state_dict(checkpoint["state_dict"])
+# func to load a full training checkpoint for resume
+def load_checkpoint(resume_path: str, gpu: int | None = None) -> dict:
+    """Load a full training checkpoint (trusted local file, weights_only=False)."""
+    if gpu is not None and torch.cuda.is_available():
+        return torch.load(resume_path, map_location=f"cuda:{gpu}", weights_only=False)
+    return torch.load(resume_path, weights_only=False)
 
 
 def get_model_named_params(model: torch.nn.Module):
@@ -2385,12 +2305,12 @@ def print_train_time(start, end, device=None, machine=None):
 # SOURCE: https://www.learnpytorch.io/09_pytorch_model_deployment/
 # 1. Create a function to return a list of dictionaries with sample, truth label, prediction, prediction probability and prediction time
 def pred_and_store(
-    paths: List[pathlib.Path],
+    paths: list[pathlib.Path],
     model: torch.nn.Module,
     # transform: torchvision.transforms,
     # class_names: List[str],
     device: torch.device = "",
-) -> List[Dict]:
+) -> list[dict]:
 
     ic(paths)
     # ic(model.name)
@@ -2398,11 +2318,10 @@ def pred_and_store(
     # ic(class_names)
     ic(device)
     # 2. Create an empty list to store prediction dictionaires
-    pred_list = []
+    fullsize_bboxes = []
 
     # 3. Loop through target paths
     for path in tqdm(paths):
-
         # 4. Create empty dictionary to store prediction information for each sample
         pred_dict = {}
 
@@ -2410,7 +2329,7 @@ def pred_and_store(
         pred_dict["image_path"] = path
 
         # 6. Start the prediction timer
-        start_time = timer()
+        timer()
 
         targetSize = Dimensions.HEIGHT
         # 7. Open image path
@@ -2450,25 +2369,11 @@ def pred_and_store(
             ic(out_bbox)
 
             xmin, ymin, xmax, ymax = out_bbox[0]
-            pt1 = (int(xmin), int(ymin))
-            pt2 = (int(xmax), int(ymax))
+            (int(xmin), int(ymin))
+            (int(xmax), int(ymax))
 
             # import bpdb
             # bpdb.set_trace()
-
-            starting_point = pt1
-            end_point = pt2
-            color = (255, 0, 0)
-            thickness = 2
-
-            # generate the image with bounding box on it
-            out_img = cv2.rectangle(
-                unsqueezed_tensor.squeeze().permute(1, 2, 0).cpu().numpy(),
-                starting_point,
-                end_point,
-                color,
-                thickness,
-            )
 
             # TODO: Enable this?
             # if --display
@@ -2483,9 +2388,9 @@ def pred_and_store(
             resized_width = img_width
             resized_dims = (resized_height, resized_width)
 
-            image_tensor_to_resize_channels = image_tensor_to_resize.shape[0]
-            image_tensor_to_resize_height = image_tensor_to_resize.shape[1]
-            image_tensor_to_resize_width = image_tensor_to_resize.shape[2]
+            image_tensor_to_resize.shape[0]
+            image_tensor_to_resize.shape[1]
+            image_tensor_to_resize.shape[2]
 
             # perform fullsize transformation
             fullsize_image, fullsize_bboxes = resize_image_and_bbox(
@@ -2504,13 +2409,8 @@ def pred_and_store(
                 ymax_fullsize,
             ) = fullsize_bboxes[0]
 
-            pt1_fullsize = (int(xmin_fullsize), int(ymin_fullsize))
-            pt2_fullsize = (int(xmax_fullsize), int(ymax_fullsize))
-
-            starting_point_fullsize = pt1_fullsize
-            end_point_fullsize = pt2_fullsize
-            color = OPENCV_RED
-            thickness = 1
+            (int(xmin_fullsize), int(ymin_fullsize))
+            (int(xmax_fullsize), int(ymax_fullsize))
 
             # NOTE: commented out for now, move this into a display image function
             # FIXME
@@ -2552,21 +2452,18 @@ def pred_and_store(
 if __name__ == "__main__":
     import traceback
 
-    better_exceptions.hook()
-
     try:
         main()
     except Exception as ex:
-
         print(str(ex))
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)
         traceback_str = "".join(tb.format_exception_only())
-        print("Error Class: {}".format(str(ex.__class__)))
+        print(f"Error Class: {str(ex.__class__)}")
 
         output = "[{}] {}: {}".format("UNEXPECTED", type(ex).__name__, ex)
         print(output)
-        print("exc_type: {}".format(exc_type))
-        print("exc_value: {}".format(exc_value))
+        print(f"exc_type: {exc_type}")
+        print(f"exc_value: {exc_value}")
         traceback.print_tb(exc_traceback)
         bpdb.pm()

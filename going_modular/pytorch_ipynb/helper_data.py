@@ -1,12 +1,9 @@
 import torch
-from torch.utils.data import sampler
-from torchvision import datasets
-from torch.utils.data import DataLoader
-from torch.utils.data import SubsetRandomSampler
-from torchvision import transforms
+from torch.utils.data import DataLoader, SubsetRandomSampler
+from torchvision import datasets, transforms
 
 
-class UnNormalize(object):
+class UnNormalize:
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
@@ -21,7 +18,7 @@ class UnNormalize(object):
         ------------
         Tensor: Normalized image.
         """
-        for t, m, s in zip(tensor, self.mean, self.std):
+        for t, m, s in zip(tensor, self.mean, self.std, strict=False):
             t.mul_(s).add_(m)
         return tensor
 

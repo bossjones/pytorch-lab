@@ -1,0 +1,16 @@
+---
+description: Python coding standards
+globs:
+  - "**/*.py"
+  - "**/pyproject.toml"
+alwaysApply: true
+---
+
+- All IO-bound operations MUST be `async def`
+- Type hints are mandatory (Python 3.12+ syntax: use `X | Y` not `Optional[X]`)
+- Use Pydantic V2 `model_validate` patterns for data models
+- Use `uv run` to execute scripts, NOT bare `python`
+- All functions and classes require docstrings (PEP 257)
+- Tests go in `./tests`, use pytest only (no unittest)
+- NEVER use placeholder comments like `# TODO: implement this` or `# ...rest of code`
+- Before importing a package, verify it exists: run `uv pip show <package>` first

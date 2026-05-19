@@ -1,12 +1,6 @@
-import torch
-import torchvision.models as models
-import torch.nn as nn
-import devices
-import argparse
 import timm
-import torchvision.transforms.functional as FT
-import torch.nn.functional as F
-from helpers import find_intersection, find_jaccard_overlap
+import torch.nn as nn
+import torchvision.models as models
 
 MODEL_NAMES = sorted(
     name
@@ -16,19 +10,27 @@ MODEL_NAMES = sorted(
 
 
 class ObjLocModel(nn.Module):
-    def __init__(self):
-        super(ObjLocModel, self).__init__()
-        # super().__init__()
+    """EfficientNet-B0-based object localization model.
 
-        # device = devices.get_optimal_device(args)
+    Wraps a ``timm`` ``efficientnet_b0`` backbone configured with
+    ``num_classes=4`` so that it regresses 4 bounding-box coordinates
+    (x_min, y_min, x_max, y_max) instead of class logits. When ground-truth
+    boxes are supplied to :meth:`forward`, the predictions are scored with
+    ``nn.MSELoss`` and the loss is returned alongside them.
+    """
 
-        # weights = models.__dict__[args.model_weights].DEFAULT
-        # auto_transforms = weights.transforms()
-        # model = models.__dict__[args.arch](weights=weights).to(device)
-        # model.name = args.arch
+    def __init__(self, pretrained: bool = True):
+        """Build the localization model.
+
+        Args:
+            pretrained: If ``True``, initialize the EfficientNet-B0 backbone
+                with ImageNet pretrained weights; otherwise use random
+                initialization.
+        """
+        super().__init__()
 
         self.backbone = timm.create_model(
-            "efficientnet_b0", pretrained=True, num_classes=4
+            "efficientnet_b0", pretrained=pretrained, num_classes=4
         )
         # self.backbone = model
 
@@ -36,10 +38,24 @@ class ObjLocModel(nn.Module):
     #     self.backbone = timm.create_model(args.arch, pretrained=True, num_classes=4)
 
     def forward(self, images, gt_bboxes=None):
+        """Run a forward pass and optionally compute the regression loss.
+
+        Args:
+            images: Input image batch tensor of shape ``(B, C, H, W)``.
+            gt_bboxes: Optional ground-truth bounding boxes of shape
+                ``(B, 4)``. When provided, an MSE loss between the
+                predictions and these targets is also returned.
+
+        Returns:
+            If ``gt_bboxes`` is ``None``, a tensor of shape ``(B, 4)`` with
+            the predicted bounding-box coordinates. Otherwise, a tuple
+            ``(bboxes_logits, loss)`` where ``bboxes_logits`` has shape
+            ``(B, 4)`` and ``loss`` is the scalar MSE loss tensor.
+        """
         bboxes_logits = self.backbone(images)  ## predicted bounding boxes
 
         # gt_bboxes = ground truth bounding boxes
-        if gt_bboxes != None:
+        if gt_bboxes is not None:
             # Creates a criterion that measures the mean squared error (squared L2 norm) between each element in the input xx and target yy.
             loss = nn.MSELoss()(bboxes_logits, gt_bboxes)
             return bboxes_logits, loss

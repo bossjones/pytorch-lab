@@ -2,20 +2,25 @@
 Contains functionality for creating PyTorch DataLoaders for
 image classification data.
 """
-import os
 
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
-from typing import Tuple, List
+import os
 
 # from utils import display_ascii_text
 import pyfiglet
 from rich import print
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 
 NUM_WORKERS = os.cpu_count()
 
 
 def display_ascii_text(txt: str, font: str = "stop"):
+    """Renders text as an ASCII-art banner and prints it.
+
+    Args:
+        txt: The text to render as ASCII art.
+        font: The pyfiglet font to use for rendering.
+    """
     title = pyfiglet.figlet_format(txt, font=font)
     print(f"[magenta]{title}[/magenta]")
 
@@ -27,7 +32,7 @@ def create_dataloaders(
     batch_size: int,
     num_workers: int = NUM_WORKERS,
     pin_memory: bool = False,
-) -> Tuple[DataLoader, DataLoader, List[str]]:
+) -> tuple[DataLoader, DataLoader, list[str]]:
     """Creates training and testing DataLoaders.
 
   Takes in a training directory and testing directory path and turns

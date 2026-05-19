@@ -38,11 +38,27 @@ from loguru._defaults import LOGURU_FORMAT
 
 
 class LoggerPatch(BaseModel):
+    """Pydantic model describing a logger level patch.
+
+    Attributes:
+        name: The fully qualified name of the logger to patch.
+        level: The logging level to apply, as a string.
+    """
+
     name: str
     level: str
 
 
 class LoggerModel(BaseModel):
+    """Pydantic model representing a node in the logging hierarchy.
+
+    Attributes:
+        name: The fully qualified name of the logger.
+        level: The effective numeric logging level, or ``None`` for
+            placeholder nodes.
+        children: Child :class:`LoggerModel` nodes nested under this logger.
+    """
+
     name: str
     level: Optional[int]
     # children: Optional[List["LoggerModel"]] = None
@@ -118,6 +134,15 @@ class InterceptHandler(logging.Handler):
     # from logging import WARN
     # https://issueexplorer.com/issue/tiangolo/fastapi/4026
     def emit(self, record: logging.LogRecord) -> None:  # pragma: no cover
+        """Forward a standard logging record to the loguru sink.
+
+        Maps the record's level name to the equivalent loguru level (falling
+        back to the numeric level), walks the stack to find the originating
+        caller, and re-emits the message through loguru.
+
+        Args:
+            record: The standard library log record to forward.
+        """
         # Get corresponding Loguru level if it exists
         try:
             level = logger.level(record.levelname).name
@@ -152,12 +177,29 @@ class LoopDetector(logging.Filter):
     LINE_REPETITION_THRESHOLD = 5
 
     def __init__(self) -> None:
+        """Initialize the loop detector's line-history bookkeeping.
+
+        Sets up the bounded deque of recently seen log lines and the counter
+        tracking currently suppressed lines.
+        """
         self._recent_lines: Deque[str] = collections.deque(
             maxlen=self.LINE_HISTORY_SIZE
         )
         self._supressed_lines: collections.Counter = collections.Counter()
 
     def filter(self, record: logging.LogRecord) -> bool:
+        """Track repeating warning/error lines to detect logging loops.
+
+        Records at or above ``WARNING`` are added to a rolling history; lines
+        that repeat beyond the repetition threshold are flagged as suppressed.
+        The record itself is always allowed through.
+
+        Args:
+            record: The log record being filtered.
+
+        Returns:
+            ``True`` so the record continues to be emitted.
+        """
         if record.levelno < logging.WARNING:
             return True
 
@@ -194,7 +236,22 @@ def get_logger(
     level: int = logging.INFO,
     logger: logging.Logger = logger,
 ) -> logging.Logger:
+    """Configure and return a loguru-backed logger.
 
+    Resets loguru, installs a stdout sink using :func:`format_record`, adds
+    targeted error-level filters, and routes the standard library logging
+    through :class:`InterceptHandler`.
+
+    Args:
+        name: The logical name of the logger (used by callers for context).
+        provider: Optional provider label associated with the logger.
+        level: The base logging level. Defaults to ``logging.INFO``.
+        logger: The loguru logger instance to configure. Defaults to the
+            module-level loguru ``logger``.
+
+    Returns:
+        The configured loguru logger instance.
+    """
     config = {
         "handlers": [
             {
@@ -292,6 +349,14 @@ def get_logger(
 
 # SOURCE: https://github.com/joint-online-judge/fastapi-rest-framework/blob/b0e93f0c0085597fcea4bb79606b653422f16700/fastapi_rest_framework/logging.py#L43
 def intercept_all_loggers(level: int = logging.DEBUG) -> None:
+    """Route all standard library logging through the loguru intercept handler.
+
+    Installs :class:`InterceptHandler` as the root handler and clears the
+    ``uvicorn`` logger's handlers so its records are also intercepted.
+
+    Args:
+        level: The root logging level to set. Defaults to ``logging.DEBUG``.
+    """
     logging.basicConfig(handlers=[InterceptHandler()], level=level)
     logging.getLogger("uvicorn").handlers = []
 
@@ -307,6 +372,19 @@ def get_caller_stack_name(depth=1):
 
 # SOURCE: https://github.com/jupiterbjy/CUIAudioPlayer/blob/dev_master/CUIAudioPlayer/LoggingConfigurator.py
 def get_caller_stack_and_association(depth=1):
+    """Resolve the qualified name of the calling function via stack inspection.
+
+    Walks the stack frame at the given depth and uses the garbage collector to
+    locate the function object owning that frame's code, returning its
+    qualified name.
+
+    Args:
+        depth: The stack depth to inspect, for nested usage. Defaults to ``1``.
+
+    Returns:
+        The caller's ``__qualname__``, or ``"<Module>"`` if no owning function
+        can be determined.
+    """
     stack_frame = inspect.stack()[depth][0]
     f_code_ref = stack_frame.f_code
 
@@ -329,10 +407,26 @@ def get_caller_stack_and_association(depth=1):
 
 
 def log_caller():
+    """Return the immediate caller's name wrapped in angle brackets.
+
+    Returns:
+        A string of the form ``"<caller_name>"`` identifying the calling
+        function.
+    """
     return f"<{get_caller_stack_name()}>"
 
 
 def get_lm_from_tree(loggertree: LoggerModel, find_me: str) -> LoggerModel:
+    """Recursively search a logger tree for a node by name.
+
+    Args:
+        loggertree: The root :class:`LoggerModel` to search from.
+        find_me: The fully qualified logger name to locate.
+
+    Returns:
+        The matching :class:`LoggerModel` node, or ``None`` if no node with
+        the given name exists in the tree.
+    """
     if find_me == loggertree.name:
         LOGGER.debug("Found")
         return loggertree
@@ -345,6 +439,16 @@ def get_lm_from_tree(loggertree: LoggerModel, find_me: str) -> LoggerModel:
 
 
 def generate_tree() -> LoggerModel:
+    """Build a tree of the active standard library loggers.
+
+    Walks ``logging.root.manager.loggerDict`` and reconstructs the logger
+    hierarchy as nested :class:`LoggerModel` nodes, adapted from the
+    ``logging_tree`` package.
+
+    Returns:
+        The root :class:`LoggerModel` whose ``children`` mirror the current
+        logging hierarchy.
+    """
     # pylint: disable=no-member
     # adapted from logging_tree package https://github.com/brandon-rhodes/logging_tree
     rootm = LoggerModel(

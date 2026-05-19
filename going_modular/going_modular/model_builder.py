@@ -1,6 +1,7 @@
 """
 Contains PyTorch model code to instantiate a TinyVGG model.
 """
+
 import torch
 from torch import nn
 
@@ -18,6 +19,16 @@ class TinyVGG(nn.Module):
     """
 
     def __init__(self, input_shape: int, hidden_units: int, output_shape: int) -> None:
+        """Builds the TinyVGG layers.
+
+        Constructs two convolutional blocks (each Conv2d -> ReLU -> Conv2d ->
+        ReLU -> MaxPool2d) followed by a flattening linear classifier.
+
+        Args:
+            input_shape: Number of input channels (e.g. 3 for RGB images).
+            hidden_units: Number of hidden units (channels) between layers.
+            output_shape: Number of output units (i.e. number of classes).
+        """
         super().__init__()
         self.conv_block_1 = nn.Sequential(
             nn.Conv2d(
@@ -53,6 +64,17 @@ class TinyVGG(nn.Module):
         )
 
     def forward(self, x: torch.Tensor):
+        """Performs a forward pass through the network.
+
+        Runs the input sequentially through conv_block_1, conv_block_2, and
+        the classifier (which flattens before the final linear layer).
+
+        Args:
+            x: A batch of input images as a tensor.
+
+        Returns:
+            The output logits tensor of shape (batch_size, output_shape).
+        """
         x = self.conv_block_1(x)
         x = self.conv_block_2(x)
         x = self.classifier(x)

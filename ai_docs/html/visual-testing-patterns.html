@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual & Image-Aware Testing in Python — pytest field notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0e14;
+    --bg-2:      #0f141c;
+    --surface:   #131a24;
+    --surface-2: #182230;
+    --border:    #1f2a3a;
+    --border-2:  #2a3a52;
+    --ink:       #e8e6df;
+    --ink-2:     #b8b5ac;
+    --muted:     #7a7d85;
+    --cyan:      #5cdbf0;
+    --cyan-dim:  #2a8a9a;
+    --amber:     #ffb454;
+    --amber-dim: #a87232;
+    --magenta:   #d97cb6;
+    --green:     #8bd17c;
+    --red:       #ff7b72;
+    --serif:     "Instrument Serif", "Iowan Old Style", Georgia, serif;
+    --sans:      "Geist", "Helvetica Neue", system-ui, sans-serif;
+    --mono:      "JetBrains Mono", "SF Mono", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(ellipse 800px 600px at 20% -10%, rgba(92, 219, 240, 0.06), transparent),
+      radial-gradient(ellipse 600px 500px at 95% 10%, rgba(255, 180, 84, 0.04), transparent);
+    background-attachment: fixed;
+  }
+
+  /* Subtle dot grid overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 56px 32px 120px;
+  }
+
+  /* ===== HEADER / MASTHEAD ===== */
+  .masthead {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+    margin-bottom: 56px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 10px;
+    height: 1px;
+    background: var(--cyan);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(40px, 5.5vw, 64px);
+    font-weight: 400;
+    line-height: 1.0;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  h1 em {
+    color: var(--amber);
+    font-style: italic;
+  }
+
+  .meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.7;
+  }
+  .meta span { color: var(--ink-2); }
+
+  /* ===== INTRO ===== */
+  .intro {
+    font-family: var(--serif);
+    font-size: 22px;
+    line-height: 1.45;
+    color: var(--ink-2);
+    max-width: 720px;
+    margin-bottom: 48px;
+  }
+  .intro em { color: var(--cyan); font-style: italic; }
+
+  /* ===== TOC ===== */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin-bottom: 80px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px 28px;
+  }
+  .toc-item {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--ink-2);
+    transition: color 0.15s;
+    font-size: 14px;
+  }
+  .toc-item:hover { color: var(--cyan); }
+  .toc-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .toc-item:hover .toc-num { color: var(--amber); }
+
+  /* ===== SECTION ===== */
+  section {
+    margin-bottom: 96px;
+    scroll-margin-top: 40px;
+  }
+
+  .section-head {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 24px;
+    align-items: baseline;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 0.15em;
+    padding-top: 8px;
+  }
+  .section-title-block h2 {
+    font-family: var(--serif);
+    font-size: 36px;
+    font-weight: 400;
+    line-height: 1.1;
+    margin-bottom: 6px;
+    letter-spacing: -0.005em;
+  }
+  .section-title-block .deck {
+    color: var(--muted);
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+
+  .section-body {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 24px;
+  }
+  .section-body > .body-inner {
+    grid-column: 2;
+  }
+
+  p { margin-bottom: 18px; color: var(--ink-2); }
+  p strong { color: var(--ink); font-weight: 500; }
+  p code, li code { font-family: var(--mono); font-size: 0.9em; background: var(--surface); color: var(--cyan); padding: 1px 6px; border-radius: 3px; border: 1px solid var(--border); }
+
+  a { color: var(--cyan); text-decoration: none; border-bottom: 1px solid var(--cyan-dim); }
+  a:hover { color: var(--amber); border-color: var(--amber); }
+
+  ul { margin: 0 0 18px 20px; color: var(--ink-2); }
+  ul li { margin-bottom: 6px; }
+
+  /* ===== CODE BLOCK ===== */
+  .code {
+    margin: 20px 0 28px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--bg-2);
+  }
+  .code-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .code-head .filename { color: var(--ink-2); }
+  .code-head .filename .ext { color: var(--muted); }
+  .copy-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border-2);
+    border-radius: 3px;
+    padding: 3px 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--amber); border-color: var(--amber-dim); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  pre {
+    margin: 0;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  pre::-webkit-scrollbar { height: 8px; }
+  pre::-webkit-scrollbar-track { background: var(--bg); }
+  pre::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+
+  /* Syntax tokens (manual highlighting via spans) */
+  .tk-c   { color: var(--muted); font-style: italic; }     /* comment */
+  .tk-k   { color: var(--magenta); }                       /* keyword */
+  .tk-s   { color: var(--green); }                         /* string */
+  .tk-n   { color: var(--amber); }                         /* number */
+  .tk-f   { color: var(--cyan); }                          /* function/decorator */
+  .tk-cl  { color: #ffd56b; }                              /* class */
+  .tk-b   { color: var(--magenta); }                       /* builtin */
+  .tk-op  { color: var(--ink-2); }                         /* operator */
+
+  /* ===== CALLOUT ===== */
+  .callout {
+    background: linear-gradient(180deg, rgba(92,219,240,0.04), rgba(92,219,240,0.01));
+    border-left: 2px solid var(--cyan);
+    padding: 14px 18px;
+    margin: 20px 0 28px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  .callout.amber {
+    background: linear-gradient(180deg, rgba(255,180,84,0.04), rgba(255,180,84,0.01));
+    border-left-color: var(--amber);
+  }
+  .callout .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .callout.amber .label { color: var(--amber); }
+
+  /* ===== TWO-COL DEMO (good vs bad, before/after) ===== */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 24px 0 28px;
+  }
+  .compare > div {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+  }
+  .compare h4 {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    color: var(--red);
+  }
+  .compare .good h4 { color: var(--green); }
+  .compare pre { padding: 0; font-size: 11.5px; }
+
+  /* ===== TABLE / CHEAT-SHEET ===== */
+  .cheatsheet {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0 28px;
+    font-size: 13px;
+  }
+  .cheatsheet th, .cheatsheet td {
+    text-align: left;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .cheatsheet th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--surface);
+    font-weight: 500;
+  }
+  .cheatsheet td:first-child {
+    font-family: var(--mono);
+    color: var(--cyan);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .cheatsheet td code {
+    font-family: var(--mono);
+    color: var(--amber);
+    font-size: 12px;
+  }
+
+  /* ===== SVG ILLUSTRATION ===== */
+  .figure {
+    margin: 28px 0;
+    padding: 24px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .figure svg { display: block; width: 100%; height: auto; }
+  .figure-caption {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    border-top: 1px solid var(--border);
+    margin-top: 80px;
+    padding-top: 32px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  footer .terminal {
+    color: var(--cyan);
+  }
+  footer .terminal::before { content: "$ "; color: var(--amber); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 720px) {
+    .container { padding: 32px 20px 80px; }
+    .masthead { grid-template-columns: 1fr; }
+    .meta { text-align: left; }
+    .section-head, .section-body { grid-template-columns: 1fr; gap: 8px; }
+    .section-body > .body-inner { grid-column: 1; }
+    .compare { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ========== MASTHEAD ========== -->
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">PYTEST · FIELD NOTES · VOL. 1</div>
+      <h1>Testing things you have to <em>look at</em>.</h1>
+    </div>
+    <div class="meta">
+      <div><span>FOCUS</span> visual / image / mock / torch</div>
+      <div><span>FORMAT</span> single .html, copy-paste-ready</div>
+      <div><span>FOR</span> Astronauts workshop</div>
+    </div>
+  </header>
+
+  <!-- ========== INTRO ========== -->
+  <p class="intro">
+    Plots, images, and tensors don't fit the <em>assertEqual</em> shape. You compare them in
+    perceptual or numeric tolerance, not character-by-character. Here are the four pytest patterns
+    worth knowing — with the code that makes them stick.
+  </p>
+
+  <!-- ========== TOC ========== -->
+  <nav class="toc">
+    <a class="toc-item" href="#mpl"><span class="toc-num">01</span> matplotlib figures</a>
+    <a class="toc-item" href="#img"><span class="toc-num">02</span> opencv / pillow diffs</a>
+    <a class="toc-item" href="#mock"><span class="toc-num">03</span> pytest-mock</a>
+    <a class="toc-item" href="#torch"><span class="toc-num">04</span> pytest-pytorch</a>
+    <a class="toc-item" href="#cheat"><span class="toc-num">05</span> when to reach for what</a>
+  </nav>
+
+  <!-- ========== SECTION 1: MATPLOTLIB ========== -->
+  <section id="mpl">
+    <div class="section-head">
+      <div class="section-num">01</div>
+      <div class="section-title-block">
+        <h2>Matplotlib figures</h2>
+        <div class="deck">pytest-mpl · image hashing · numeric data extraction</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <div class="body-inner">
+        <p>
+          The mature answer is <code>pytest-mpl</code>: decorate the test, return a Figure, the plugin
+          renders it and diffs against a stored baseline PNG. You generate the baseline once with
+          <code>--mpl-generate-path</code>, check it in, and CI fails on visual drift.
+        </p>
+
+        <div class="code">
+          <div class="code-head">
+            <span class="filename">tests/test_plots<span class="ext">.py</span></span>
+            <button class="copy-btn" data-copy="mpl-basic">COPY</button>
+          </div>
+<pre id="mpl-basic"><span class="tk-k">import</span> matplotlib.pyplot <span class="tk-k">as</span> plt
+<span class="tk-k">import</span> numpy <span class="tk-k">as</span> np
+<span class="tk-k">import</span> pytest
+
+
+<span class="tk-f">@pytest.mark.mpl_image_compare</span>(baseline_dir=<span class="tk-s">"baseline"</span>, tolerance=<span class="tk-n">8</span>)
+<span class="tk-k">def</span> <span class="tk-f">test_revenue_chart</span>():
+    fig, ax = plt.subplots(figsize=(<span class="tk-n">6</span>, <span class="tk-n">4</span>))
+    quarters = [<span class="tk-s">"Q1"</span>, <span class="tk-s">"Q2"</span>, <span class="tk-s">"Q3"</span>, <span class="tk-s">"Q4"</span>]
+    revenue  = [<span class="tk-n">1.2</span>, <span class="tk-n">1.8</span>, <span class="tk-n">2.1</span>, <span class="tk-n">2.6</span>]
+    ax.bar(quarters, revenue, color=<span class="tk-s">"#5cdbf0"</span>)
+    ax.set_title(<span class="tk-s">"Revenue ($M)"</span>)
+    <span class="tk-k">return</span> fig          <span class="tk-c"># pytest-mpl picks this up</span>
+
+
+<span class="tk-c"># Generate baseline once:</span>
+<span class="tk-c">#   pytest --mpl-generate-path=tests/baseline</span>
+<span class="tk-c"># Run normally:</span>
+<span class="tk-c">#   pytest --mpl</span></pre>
+        </div>
+
+        <div class="callout">
+          <span class="label">Pitfall</span>
+          Baselines depend on the matplotlib version, the backend, freetype, and the OS font stack.
+          Pin them. The community pattern is a fixed Docker image (or <code>uv</code> lock) plus
+          <code>matplotlib.use("Agg")</code> in <code>conftest.py</code>. Don't generate baselines on macOS and run CI on Linux.
+        </div>
+
+        <p>
+          When you don't want pixel comparison at all — sometimes you just want to assert <em>the
+          right numbers got plotted</em> — interrogate the Axes directly. This is faster, more stable,
+          and tells the next reader what the test actually cares about.
+        </p>
+
+        <div class="code">
+          <div class="code-head">
+            <span class="filename">tests/test_plot_data<span class="ext">.py</span></span>
+            <button class="copy-btn" data-copy="mpl-data">COPY</button>
+          </div>
+<pre id="mpl-data"><span class="tk-k">def</span> <span class="tk-f">test_bar_heights_match_input</span>():
+    fig, ax = plt.subplots()
+    ax.bar([<span class="tk-s">"a"</span>, <span class="tk-s">"b"</span>, <span class="tk-s">"c"</span>], [<span class="tk-n">1</span>, <span class="tk-n">2</span>, <span class="tk-n">3</span>])
+
+    heights = [bar.get_height() <span class="tk-k">for</span> bar <span class="tk-k">in</span> ax.patches]
+    <span class="tk-k">assert</span> heights == [<span class="tk-n">1.0</span>, <span class="tk-n">2.0</span>, <span class="tk-n">3.0</span>]
+    <span class="tk-k">assert</span> ax.get_xticklabels()[<span class="tk-n">0</span>].get_text() == <span class="tk-s">"a"</span>
+
+
+<span class="tk-k">def</span> <span class="tk-f">test_line_data_matches</span>():
+    fig, ax = plt.subplots()
+    ax.plot([<span class="tk-n">0</span>, <span class="tk-n">1</span>, <span class="tk-n">2</span>], [<span class="tk-n">0</span>, <span class="tk-n">1</span>, <span class="tk-n">4</span>], label=<span class="tk-s">"x²"</span>)
+
+    line = ax.get_lines()[<span class="tk-n">0</span>]
+    np.testing.assert_array_equal(line.get_xdata(), [<span class="tk-n">0</span>, <span class="tk-n">1</span>, <span class="tk-n">2</span>])
+    np.testing.assert_array_equal(line.get_ydata(), [<span class="tk-n">0</span>, <span class="tk-n">1</span>, <span class="tk-n">4</span>])
+    <span class="tk-k">assert</span> line.get_label() == <span class="tk-s">"x²"</span></pre>
+        </div>
+
+        <div class="callout amber">
+          <span class="label">Heuristic</span>
+          Pixel tests for <strong>"does this look right"</strong>. Data extraction for
+          <strong>"is the math right"</strong>. Most plotting bugs are math bugs disguised as
+          rendering bugs — go data-first.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 2: IMAGES ========== -->
+  <section id="img">
+    <div class="section-head">
+      <div class="section-num">02</div>
+      <div class="section-title-block">
+        <h2>OpenCV &amp; Pillow image diffing</h2>
+        <div class="deck">absdiff · SSIM · perceptual hash · golden masters</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <div class="body-inner">
+        <p>
+          Three tools cover almost everything. <code>cv2.absdiff</code> gives you a raw pixel-difference
+          mask, <code>scikit-image.metrics.structural_similarity</code> (SSIM) gives a perceptual score
+          that tolerates compression noise, and <code>imagehash</code> gives a hash you can compare
+          with a Hamming distance threshold — useful when image dimensions or formats drift.
+        </p>
+
+        <div class="figure">
+          <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="dots" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
+                <circle cx="3" cy="3" r="0.8" fill="#5cdbf0" opacity="0.5"/>
+              </pattern>
+            </defs>
+            <!-- A -->
+            <rect x="30" y="40" width="120" height="120" fill="#1f2a3a" stroke="#2a3a52"/>
+            <rect x="60" y="70" width="60" height="60" fill="url(#dots)"/>
+            <text x="90" y="180" text-anchor="middle" fill="#7a7d85" font-family="JetBrains Mono" font-size="10">expected</text>
+            <!-- minus sign -->
+            <text x="190" y="110" text-anchor="middle" fill="#ffb454" font-family="JetBrains Mono" font-size="32">−</text>
+            <!-- B -->
+            <rect x="230" y="40" width="120" height="120" fill="#1f2a3a" stroke="#2a3a52"/>
+            <rect x="265" y="75" width="60" height="60" fill="url(#dots)" opacity="0.95"/>
+            <text x="290" y="180" text-anchor="middle" fill="#7a7d85" font-family="JetBrains Mono" font-size="10">actual</text>
+            <!-- equals -->
+            <text x="390" y="115" text-anchor="middle" fill="#ffb454" font-family="JetBrains Mono" font-size="28">=</text>
+            <!-- diff -->
+            <rect x="430" y="40" width="120" height="120" fill="#0a0e14" stroke="#2a3a52"/>
+            <rect x="460" y="70" width="60" height="5" fill="#ff7b72"/>
+            <rect x="460" y="125" width="60" height="5" fill="#ff7b72"/>
+            <rect x="460" y="70" width="5" height="60" fill="#ff7b72"/>
+            <rect x="515" y="70" width="5" height="60" fill="#ff7b72"/>
+            <text x="490" y="180" text-anchor="middle" fill="#7a7d85" font-family="JetBrains Mono" font-size="10">diff mask</text>
+            <!-- arrow to score -->
+            <text x="590" y="115" text-anchor="middle" fill="#ffb454" font-family="JetBrains Mono" font-size="20">→</text>
+            <!-- score -->
+            <rect x="620" y="60" width="150" height="80" fill="#131a24" stroke="#5cdbf0" rx="2"/>
+            <text x="695" y="92" text-anchor="middle" fill="#7a7d85" font-family="JetBrains Mono" font-size="9">SSIM</text>
+            <text x="695" y="118" text-anchor="middle" fill="#5cdbf0" font-family="JetBrains Mono" font-size="20">0.973</text>
+            <text x="695" y="180" text-anchor="middle" fill="#7a7d85" font-family="JetBrains Mono" font-size="10">threshold ≥ 0.95</text>
+          </svg>
+          <div class="figure-caption">pixel diff → mask → similarity score → assertion</div>
+        </div>
+
+        <p><strong>Approach A — OpenCV absdiff.</strong> Loud, exact, intolerant. Use for rendered output where every pixel should match (icons, generated thumbnails on the same pipeline).</p>
+
+        <div class="code">
+          <div class="code-head">
+            <span class="filename">tests/test_images_cv<span class="ext">.py</span></span>
+            <button class="copy-btn" data-copy="img-cv">COPY</button>
+          </div>
+<pre id="img-cv"><span class="tk-k">import</span> cv2
+<span class="tk-k">import</span> numpy <span class="tk-k">as</span> np
+<span class="tk-k">import</span> pytest
+<span class="tk-k">from</span> pathlib <span class="tk-k">import</span> Path
+
+
+<span class="tk-f">@pytest.fixture</span>
+<span class="tk-k">def</span> <span class="tk-f">expected</span>():
+    <span class="tk-k">return</span> cv2.imread(<span class="tk-s">"tests/fixtures/expected.png"</span>)
+
+
+<span class="tk-k">def</span> <span class="tk-f">test_thumbnail_matches</span>(expected, tmp_path: Path):
+    actual = my_pipeline.render_thumbnail()         <span class="tk-c"># your code under test</span>
+
+    <span class="tk-k">assert</span> actual.shape == expected.shape, <span class="tk-s">"size mismatch"</span>
+    diff = cv2.absdiff(actual, expected)
+    <span class="tk-k">if</span> diff.any():
+        <span class="tk-c"># On failure, drop the diff so you can eyeball it in the artifact</span>
+        cv2.imwrite(<span class="tk-b">str</span>(tmp_path / <span class="tk-s">"diff.png"</span>), diff * <span class="tk-n">10</span>)
+        cv2.imwrite(<span class="tk-b">str</span>(tmp_path / <span class="tk-s">"actual.png"</span>), actual)
+        <span class="tk-b">print</span>(<span class="tk-s">f"diff written to </span>{tmp_path}<span class="tk-s">"</span>)
+
+    <span class="tk-c"># Tolerance: average per-channel delta &lt; 1 (out of 255)</span>
+    <span class="tk-k">assert</span> diff.mean() &lt; <span class="tk-n">1.0</span></pre>
+        </div>
+
+        <p><strong>Approach B — SSIM via scikit-image.</strong> The right call when the image went through any lossy step (JPEG, resize, anti-aliasing differences). Returns a score in [-1, 1]; ≥0.95 is usually "looks the same".</p>
+
+        <div class="code">
+          <div class="code-head">
+            <span class="filename">tests/test_images_ssim<span class="ext">.py</span></span>
+            <button class="copy-btn" data-copy="img-ssim">COPY</button>
+          </div>
+<pre id="img-ssim"><span class="tk-k">from</span> skimage.metrics <span class="tk-k">import</span> structural_similarity <span class="tk-k">as</span> ssim
+<span class="tk-k">from</span> PIL <span class="tk-k">import</span> Image
+<span class="tk-k">import</span> numpy <span class="tk-k">as</span> np
+
+
+<span class="tk-k">def</span> <span class="tk-f">_gray</span>(path):
+    <span class="tk-k">return</span> np.asarray(Image.open(path).convert(<span class="tk-s">"L"</span>))
+
+
+<span class="tk-f">@pytest.mark.parametrize</span>(<span class="tk-s">"name,threshold"</span>, [
+    (<span class="tk-s">"logo.png"</span>,      <span class="tk-n">0.98</span>),   <span class="tk-c"># crisp asset</span>
+    (<span class="tk-s">"hero_jpg.jpg"</span>,  <span class="tk-n">0.92</span>),   <span class="tk-c"># jpeg, lossier</span>
+])
+<span class="tk-k">def</span> <span class="tk-f">test_processed_image_perceptually_matches</span>(name, threshold):
+    expected = _gray(<span class="tk-s">f"tests/fixtures/</span>{name}<span class="tk-s">"</span>)
+    actual   = _gray(<span class="tk-s">f"build/out/</span>{name}<span class="tk-s">"</span>)
+
+    score, diff = ssim(expected, actual, full=<span class="tk-k">True</span>)
+    <span class="tk-k">assert</span> score &gt;= threshold, <span class="tk-s">f"SSIM </span>{score:.<span class="tk-n">3</span>f}<span class="tk-s"> &lt; </span>{threshold}<span class="tk-s">"</span></pre>
+        </div>
+
+        <p><strong>Approach C — Perceptual hashing.</strong> Cheap, robust to resize / re-encode / format change. The right call when you just want to say "is this still essentially the same image" across formats.</p>
+
+        <div class="code">
+          <div class="code-head">
+            <span class="filename">tests/test_images_phash<span class="ext">.py</span></span>
+            <button class="copy-btn" data-copy="img-phash">COPY</button>
+          </div>
+<pre id="img-phash"><span class="tk-k">import</span> imagehash
+<span class="tk-k">from</span> PIL <span class="tk-k">import</span> Image
+
+
+<span class="tk-k">def</span> <span class="tk-f">test_thumbnail_essentially_unchanged</span>():
+    a = imagehash.phash(Image.open(<span class="tk-s">"tests/fixtures/cover.png"</span>))
+    b = imagehash.phash(Image.open(<span class="tk-s">"build/cover.webp"</span>))
+
+    <span class="tk-c"># Hamming distance: 0 = identical, &lt;=5 = visually identical for phash</span>
+    <span class="tk-k">assert</span> (a - b) &lt;= <span class="tk-n">5</span></pre>
+        </div>
+
+        <p>
+          One pattern worth pinching: the <strong>golden-master with auto-update</strong>. Save the
+          actual output next to the baseline on failure, and add a <code>--update-baselines</code>
+          flag your team uses deliberately. That makes reviews <em>"is the new image correct?"</em>
+          instead of <em>"why did this test fail again?"</em>.
+        </p>
+
+        <div class="code">
+          <div class="code-head">
+            <span class="filename">tests/conftest<span class="ext">.py</span></span>
+            <button class="copy-btn" data-copy="img-conftest">COPY</button>
+          </div>
+<pre id="img-conftest"><span class="tk-k">def</span> <span class="tk-f">pytest_addoption</span>(parser):
+    parser.addoption(
+        <span class="tk-s">"--update-baselines"</span>,
+        action=<span class="tk-s">"store_true"</span>,
+        help=<span class="tk-s">"Overwrite golden images with current output."</span>,
+    )
+
+<span class="tk-f">@pytest.fixture</span>
+<span class="tk-k">def</span> <span class="tk-f">update_baselines</span>(request):
+    <span class="tk-k">return</span> request.config.getoption(<span class="tk-s">"--update-baselines"</span>)
+
+
+<span class="tk-c"># in your test:</span>
+<span class="tk-k">def</span> <span class="tk-f">test_render</span>(update_baselines, tmp_path):
+    actual = my_render()
+    baseline = Path(<span class="tk-s">"tests/baselines/render.png"</span>)
+    <span class="tk-k">if</span> update_baselines:
+        cv2.imwrite(<span class="tk-b">str</span>(baseline), actual)
+        pytest.skip(<span class="tk-s">"baseline updated"</span>)
+    expected = cv2.imread(<span class="tk-b">str</span>(baseline))
+    <span class="tk-k">assert</span> cv2.absdiff(actual, expected).mean() &lt; <span class="tk-n">1.0</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 3: PYTEST-MOCK ========== -->
+  <section id="mock">
+    <div class="section-head">
+      <div class="section-num">03</div>
+      <div class="section-title-block">
+        <h2>pytest-mock — the <em>mocker</em> fixture</h2>
+        <div class="deck">patching · spying · auto-cleanup · I/O isolation</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <div class="body-inner">
+        <p>
+          Yes, <code>pytest-mock</code> is almost always involved in visual/image tests — because the
+          subject under test usually reads from disk, calls an API, or hits a model server, and you
+          don't want any of that running in unit tests. It's a thin pytest wrapper over
+          <code>unittest.mock</code> that gives you a <code>mocker</code> fixture with automatic teardown.
+        </p>
+
+        <div class="compare">
+          <div>
+            <h4>without pytest-mock</h4>
+<pre><span class="tk-k">from</span> unittest <span class="tk-k">import</span> mock
+
+<span class="tk-k">def</span> <span class="tk-f">test_x</span>():
+    <span class="tk-k">with</span> mock.patch(
+        <span class="tk-s">"app.io.load_image"</span>,
+        return_value=fake_img,
+    ):
+        <span class="tk-k">with</span> mock.patch(<span class="tk-s">"app.io.save"</span>):
+            run()</pre>
+          </div>
+          <div class="good">
+            <h4>with pytest-mock</h4>
+<pre><span class="tk-k">def</span> <span class="tk-f">test_x</span>(mocker):
+    mocker.patch(
+        <span class="tk-s">"app.io.load_image"</span>,
+        return_value=fake_img,
+    )
+    mocker.patch(<span class="tk-s">"app.io.save"</span>)
+    run()</pre>
+          </div>
+        </div>
+
+        <div class="code">
+          <div class="code-head">
+            <span class="filename">tests/test_pipeline<span class="ext">.py</span></span>
+            <button class="copy-btn" data-copy="mock-patterns">COPY</button>
+          </div>
+<pre id="mock-patterns"><span class="tk-k">import</span> numpy <span class="tk-k">as</span> np
+
+
+<span class="tk-k">def</span> <span class="tk-f">test_pipeline_calls_save_with_processed_array</span>(mocker):
+    <span class="tk-c"># 1. Stub the loader so no disk access</span>
+    fake = np.zeros((<span class="tk-n">64</span>, <span class="tk-n">64</span>, <span class="tk-n">3</span>), dtype=np.uint8)
+    mocker.patch(<span class="tk-s">"app.io.load_image"</span>, return_value=fake)
+
+    <span class="tk-c"># 2. Spy on save: real impl can run, but we get a call record</span>
+    save_spy = mocker.spy(app.io, <span class="tk-s">"save"</span>)
+
+    <span class="tk-c"># 3. Patch a class method on an instance the code constructs internally</span>
+    mocker.patch.object(
+        app.models.Detector,
+        <span class="tk-s">"infer"</span>,
+        return_value={<span class="tk-s">"boxes"</span>: [], <span class="tk-s">"scores"</span>: []},
+    )
+
+    app.pipeline.run(<span class="tk-s">"in.png"</span>, <span class="tk-s">"out.png"</span>)
+
+    <span class="tk-k">assert</span> save_spy.call_count == <span class="tk-n">1</span>
+    args, kwargs = save_spy.call_args
+    <span class="tk-k">assert</span> args[<span class="tk-n">0</span>] == <span class="tk-s">"out.png"</span>
+    <span class="tk-k">assert</span> args[<span class="tk-n">1</span>].shape == (<span class="tk-n">64</span>, <span class="tk-n">64</span>, <span class="tk-n">3</span>)
+
+
+<span class="tk-k">def</span> <span class="tk-f">test_http_failure_is_handled</span>(mocker):
+    <span class="tk-c"># Side effect = raise; useful for testing error paths</span>
+    mocker.patch(
+        <span class="tk-s">"app.client.requests.get"</span>,
+        side_effect=ConnectionError(<span class="tk-s">"boom"</span>),
+    )
+    result = app.client.fetch_image(<span class="tk-s">"http://x"</span>)
+    <span class="tk-k">assert</span> result <span class="tk-k">is</span> <span class="tk-k">None</span></pre>
+        </div>
+
+        <div class="callout">
+          <span class="label">Rule of thumb</span>
+          <code>mocker.patch</code> replaces, <code>mocker.spy</code> wraps. Use <code>spy</code> when
+          you want the real thing to run AND want to assert on how it was called. Use
+          <code>patch</code> when calling the real thing is slow, networked, or unsafe.
+        </div>
+
+        <p>
+          One subtlety that bites people: <strong>patch where the name is looked up, not where it's
+          defined</strong>. If <code>app/pipeline.py</code> does <code>from app.io import save</code>,
+          you patch <code>app.pipeline.save</code>, not <code>app.io.save</code>. This single
+          confusion accounts for most "the patch isn't working" tickets.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 4: PYTEST-PYTORCH ========== -->
+  <section id="torch">
+    <div class="section-head">
+      <div class="section-num">04</div>
+      <div class="section-title-block">
+        <h2>pytest-pytorch</h2>
+        <div class="deck">selecting tests by name in PyTorch's parametrized suite</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <div class="body-inner">
+        <p>
+          This one's narrower than the others. PyTorch's test suite uses its own runtime
+          parametrization (templates instantiated per device / dtype), and the generated names don't
+          match the names you see in source. So when you try to run a single test by name —
+          especially from the green-arrow next to a test in VSCode or PyCharm — it doesn't resolve.
+        </p>
+
+        <div class="callout amber">
+          <span class="label">What it actually does</span>
+          The plugin hooks pytest's collection phase and maps the names-as-written back to PyTorch's
+          generated names, so the standard pytest selection syntax just works. No code changes in
+          your tests — install it and the green arrow starts behaving.
+        </div>
+
+        <div class="code">
+          <div class="code-head">
+            <span class="filename">shell</span>
+            <button class="copy-btn" data-copy="torch-cmds">COPY</button>
+          </div>
+<pre id="torch-cmds"><span class="tk-c"># Install</span>
+pip install pytest-pytorch
+<span class="tk-c"># or: conda install -c conda-forge pytest-pytorch</span>
+
+<span class="tk-c"># Before — fails or runs nothing:</span>
+pytest test_foo.py::TestBar::test_baz
+
+<span class="tk-c"># After — runs test_baz against every instantiated device:</span>
+pytest test_foo.py::TestBar::test_baz
+
+<span class="tk-c"># Narrow to one device with -k (pytest-mark-parametrize style):</span>
+pytest test_foo.py::TestBar::test_baz -k cpu
+pytest test_foo.py::TestBar::test_baz -k cuda</pre>
+        </div>
+
+        <p>
+          If you're not actively contributing to PyTorch itself, you probably don't need it. The
+          place it shines is when you've cloned <code>pytorch/pytorch</code>, opened
+          <code>test/test_torch.py</code>, and want to run one method via your IDE without
+          memorising the auto-generated suffix scheme.
+        </p>
+
+        <p>
+          For testing <em>your own</em> code that uses PyTorch, lean on stock pytest plus
+          <code>torch.testing.assert_close</code> for tensor comparison — it handles dtype, device,
+          and tolerance properly so you don't have to remember <code>rtol</code>/<code>atol</code>
+          defaults per use case.
+        </p>
+
+        <div class="code">
+          <div class="code-head">
+            <span class="filename">tests/test_my_model<span class="ext">.py</span></span>
+            <button class="copy-btn" data-copy="torch-own">COPY</button>
+          </div>
+<pre id="torch-own"><span class="tk-k">import</span> torch
+<span class="tk-k">import</span> pytest
+
+
+<span class="tk-f">@pytest.mark.parametrize</span>(<span class="tk-s">"device"</span>, [<span class="tk-s">"cpu"</span>, pytest.param(<span class="tk-s">"cuda"</span>,
+    marks=pytest.mark.skipif(<span class="tk-k">not</span> torch.cuda.is_available(), reason=<span class="tk-s">"no gpu"</span>))])
+<span class="tk-k">def</span> <span class="tk-f">test_my_layer_output_shape</span>(device):
+    layer = MyLayer(in_dim=<span class="tk-n">16</span>, out_dim=<span class="tk-n">32</span>).to(device)
+    x = torch.randn(<span class="tk-n">4</span>, <span class="tk-n">16</span>, device=device)
+    y = layer(x)
+    <span class="tk-k">assert</span> y.shape == (<span class="tk-n">4</span>, <span class="tk-n">32</span>)
+
+
+<span class="tk-k">def</span> <span class="tk-f">test_my_layer_matches_reference</span>():
+    torch.manual_seed(<span class="tk-n">0</span>)
+    out      = MyLayer(<span class="tk-n">8</span>, <span class="tk-n">8</span>)(torch.ones(<span class="tk-n">2</span>, <span class="tk-n">8</span>))
+    expected = torch.tensor([[<span class="tk-n">0.31</span>] * <span class="tk-n">8</span>, [<span class="tk-n">0.31</span>] * <span class="tk-n">8</span>])
+    torch.testing.assert_close(out, expected, rtol=<span class="tk-n">1e-2</span>, atol=<span class="tk-n">1e-2</span>)</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 5: CHEAT SHEET ========== -->
+  <section id="cheat">
+    <div class="section-head">
+      <div class="section-num">05</div>
+      <div class="section-title-block">
+        <h2>When to reach for what</h2>
+        <div class="deck">decision table</div>
+      </div>
+    </div>
+
+    <div class="section-body">
+      <div class="body-inner">
+        <table class="cheatsheet">
+          <thead>
+            <tr><th>You're testing</th><th>Reach for</th><th>Why</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A matplotlib chart looks correct</td>
+              <td><code>pytest-mpl</code></td>
+              <td>Baseline-PNG comparison with tolerance; first-class plugin.</td>
+            </tr>
+            <tr>
+              <td>The right data got plotted</td>
+              <td>plain pytest + Axes inspection</td>
+              <td>Faster, more stable, more diagnostic than pixel diff.</td>
+            </tr>
+            <tr>
+              <td>Exact pixel match (icons, rendered HTML, generated thumbnails)</td>
+              <td><code>cv2.absdiff</code></td>
+              <td>Loud and exact; great for deterministic pipelines.</td>
+            </tr>
+            <tr>
+              <td>Perceptual match (JPEG, ML output, anti-aliased)</td>
+              <td><code>skimage.metrics.ssim</code></td>
+              <td>Tolerates compression and minor numerical drift.</td>
+            </tr>
+            <tr>
+              <td>"Roughly the same image" across formats / sizes</td>
+              <td><code>imagehash.phash</code></td>
+              <td>Cheap; format- and size-agnostic; integer threshold.</td>
+            </tr>
+            <tr>
+              <td>Code that touches disk, network, or a model</td>
+              <td><code>pytest-mock</code></td>
+              <td><code>mocker.patch</code>, <code>mocker.spy</code>, auto-cleanup.</td>
+            </tr>
+            <tr>
+              <td>Tensors, your code</td>
+              <td><code>torch.testing.assert_close</code></td>
+              <td>Handles device, dtype, rtol/atol cleanly.</td>
+            </tr>
+            <tr>
+              <td>PyTorch's own test suite (contributing upstream)</td>
+              <td><code>pytest-pytorch</code></td>
+              <td>Makes IDE green-arrow selection work with PyTorch's parametrization.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <span class="label">Workshop note</span>
+          For TaskFlow, the natural fit is sections 02 + 03: a thumbnail generator unit-tested with
+          SSIM, with <code>pytest-mock</code> stubbing the S3 upload. That gets people thinking about
+          tolerance and test-doubles in one exercise.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="terminal">pytest --mpl --update-baselines tests/</div>
+    <div>Built for the Astronauts workshop · one .html · open, copy, ship</div>
+  </footer>
+</div>
+
+<script>
+  // Copy buttons
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.copy;
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const text = el.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = 'COPIED';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 1400);
+      }).catch(() => {
+        btn.textContent = 'ERR';
+      });
+    });
+  });
+</script>
+</body>
+</html>

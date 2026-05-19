@@ -1,37 +1,48 @@
 """
 Contains functions for training and testing a PyTorch model.
 """
+
+import numpy as np
+import pyfiglet
 import torch
 import torch.profiler
-
-from tqdm.auto import tqdm
-from typing import Dict, List, Tuple
 from icecream import ic
-import pyfiglet
 from rich import print
 from torch.utils.tensorboard import SummaryWriter
-import torchvision
-import numpy as np
-from torchmetrics import Accuracy
+from tqdm.auto import tqdm
+
 
 # SOURCE: https://colab.research.google.com/drive/1nCj54XryHcoMARS4cSxivn3Ci1I6OtvO?usp=sharing#scrollTo=i4a9YMBCToGc
 def calculate_IoU(bb1, bb2):
+    """Calculates the Intersection over Union (IoU) of two bounding boxes.
+
+    Each box is expected as ``(xmin, ymin, xmax, ymax)``. Returns ``0.0``
+    when the boxes do not overlap.
+
+    Args:
+        bb1: First bounding box as ``(xmin, ymin, xmax, ymax)``.
+        bb2: Second bounding box as ``(xmin, ymin, xmax, ymax)``.
+
+    Returns:
+        The IoU (area of overlap divided by area of union) as a float in
+        the range [0.0, 1.0].
+    """
     # calculate IoU(Intersection over Union) of 2 boxes
     # **IoU = Area of Overlap / Area of Union
     # https://github.com/Hulkido/RCNN/blob/master/RCNN.ipynb
 
     (
-                bb1_xmin,
-                bb1_ymin,
-                bb1_xmax,
-                bb1_ymax,
+        bb1_xmin,
+        bb1_ymin,
+        bb1_xmax,
+        bb1_ymax,
     ) = bb1
 
     (
-                bb2_xmin,
-                bb2_ymin,
-                bb2_xmax,
-                bb2_ymax,
+        bb2_xmin,
+        bb2_ymin,
+        bb2_xmax,
+        bb2_ymax,
     ) = bb2
 
     x_left = max(bb1_xmin, bb2_xmin)
@@ -51,6 +62,12 @@ def calculate_IoU(bb1, bb2):
 
 
 def display_ascii_text(txt: str, font: str = "stop"):
+    """Renders text as an ASCII-art banner and prints it.
+
+    Args:
+        txt: The text to render as ASCII art.
+        font: The pyfiglet font to use for rendering.
+    """
     title = pyfiglet.figlet_format(txt, font=font)
     print(f"[magenta]{title}[/magenta]")
 
@@ -61,7 +78,7 @@ def train_step(
     loss_fn: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     device: torch.device,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Trains a PyTorch model for a single epoch.
 
     Turns a target PyTorch model to training mode and then
@@ -88,24 +105,26 @@ def train_step(
     # Setup train loss and train accuracy values
     train_loss, train_acc = 0, 0
 
-    with torch.profiler.profile(
-        activities=[
-            torch.profiler.ProfilerActivity.CPU,
-            torch.profiler.ProfilerActivity.CUDA,
-        ],
-        schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
-        on_trace_ready=torch.profiler.tensorboard_trace_handler(
-            "./runs/profiler", worker_name="worker0"
-        ),
-        # save information about operator's input shapes.
-        record_shapes=True,
-        #  track tensor memory allocation/deallocation.
-        profile_memory=True,  # This will take 1 to 2 minutes. Setting it to False could greatly speedup.
-        # record source information (file and line number) for the ops.
-        with_stack=True,
-    ) as prof:
+    with (
+        torch.profiler.profile(
+            activities=[
+                torch.profiler.ProfilerActivity.CPU,
+                torch.profiler.ProfilerActivity.CUDA,
+            ],
+            schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(
+                "./runs/profiler", worker_name="worker0"
+            ),
+            # save information about operator's input shapes.
+            record_shapes=True,
+            #  track tensor memory allocation/deallocation.
+            profile_memory=True,  # This will take 1 to 2 minutes. Setting it to False could greatly speedup.
+            # record source information (file and line number) for the ops.
+            with_stack=True,
+        ) as prof
+    ):
         # Loop through data loader data batches
-        for batch, (X, y) in enumerate(dataloader):
+        for _batch, (X, y) in enumerate(dataloader):
             # Send data to target device
             # X, y = X.to(device), y.to(device)
             # TODO: Might have to remove non_blocking=True
@@ -145,7 +164,7 @@ def test_step(
     dataloader: torch.utils.data.DataLoader,
     loss_fn: torch.nn.Module,
     device: torch.device,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Tests a PyTorch model for a single epoch.
 
     Turns a target PyTorch model to "eval" mode and then performs
@@ -173,7 +192,7 @@ def test_step(
     # Turn on inference context manager
     with torch.inference_mode():
         # Loop through DataLoader batches
-        for batch, (X, y) in enumerate(dataloader):
+        for _batch, (X, y) in enumerate(dataloader):
             # Send data to target device
             # X, y = X.to(device), y.to(device)
             # TODO: Might have to remove non_blocking=True
@@ -206,7 +225,7 @@ def train(
     epochs: int,
     device: torch.device,
     writer: SummaryWriter,  # new parameter to take in a writer
-) -> Dict[str, List]:
+) -> dict[str, list]:
     """Trains and tests a PyTorch model.
 
     Passes a target PyTorch models through train_step() and test_step()
@@ -293,7 +312,7 @@ def train(
 
         # Print out what's happening
         print(
-            f"Epoch: {epoch+1} | "
+            f"Epoch: {epoch + 1} | "
             f"train_loss: {train_loss:.4f} | "
             f"train_acc: {train_acc:.4f} | "
             f"test_loss: {test_loss:.4f} | "
@@ -338,6 +357,22 @@ def train_localization_fn(
     device: torch.device,
     # writer: SummaryWriter = None,  # new parameter to take in a writer
 ):
+    """Trains the localization model for a single epoch.
+
+    Puts the model in train mode and iterates over the DataLoader, sending
+    images and ground-truth bboxes to the device, running the forward pass
+    (which returns predicted bboxes and the loss), then backpropagating and
+    stepping the optimizer. Execution is wrapped in a torch profiler.
+
+    Args:
+        model: The localization PyTorch model to be trained.
+        dataloader: A DataLoader yielding ``(images, gt_bboxes)`` batches.
+        optimizer: A PyTorch optimizer used to minimize the loss.
+        device: A target device to compute on (e.g. "cuda" or "cpu").
+
+    Returns:
+        The average training loss per batch for the epoch as a float.
+    """
 
     total_loss = 0.0
 
@@ -346,26 +381,25 @@ def train_localization_fn(
     # Put model in train mode
     model.train()  # Dropout On
 
-
-    with torch.profiler.profile(
-        activities=[
-            torch.profiler.ProfilerActivity.CPU,
-            torch.profiler.ProfilerActivity.CUDA,
-        ],
-        schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
-        on_trace_ready=torch.profiler.tensorboard_trace_handler(
-            "./runs/profiler", worker_name="cropworker0"
-        ),
-        # save information about operator's input shapes.
-        record_shapes=True,
-        #  track tensor memory allocation/deallocation.
-        profile_memory=True,  # This will take 1 to 2 minutes. Setting it to False could greatly speedup.
-        # record source information (file and line number) for the ops.
-        with_stack=True,
-    ) as prof:
-
+    with (
+        torch.profiler.profile(
+            activities=[
+                torch.profiler.ProfilerActivity.CPU,
+                torch.profiler.ProfilerActivity.CUDA,
+            ],
+            schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(
+                "./runs/profiler", worker_name="cropworker0"
+            ),
+            # save information about operator's input shapes.
+            record_shapes=True,
+            #  track tensor memory allocation/deallocation.
+            profile_memory=True,  # This will take 1 to 2 minutes. Setting it to False could greatly speedup.
+            # record source information (file and line number) for the ops.
+            with_stack=True,
+        ) as prof
+    ):
         for data in tqdm(dataloader):
-
             # Send data to target device
             images, gt_bboxes = data
             images, gt_bboxes = (
@@ -396,6 +430,20 @@ def eval_localization_fn(
     dataloader: torch.utils.data.DataLoader,
     device: torch.device,
 ):
+    """Evaluates the localization model for a single epoch.
+
+    Puts the model in eval mode and iterates over the DataLoader under an
+    inference context, sending images and ground-truth bboxes to the device
+    and accumulating the loss returned by the forward pass.
+
+    Args:
+        model: The localization PyTorch model to be evaluated.
+        dataloader: A DataLoader yielding ``(images, gt_bboxes)`` batches.
+        device: A target device to compute on (e.g. "cuda" or "cpu").
+
+    Returns:
+        The average validation loss per batch for the epoch as a float.
+    """
 
     total_loss = 0.0
 
@@ -403,14 +451,10 @@ def eval_localization_fn(
     model.eval()
 
     # Lists to store detected and true boxes, labels, scores
-    det_boxes = list()  # detected bounding boxes
-    det_scores = list()  # detected scores
-    true_boxes = list()  # ground_truth bounding boxes
 
     # with torch.no_grad():
     with torch.inference_mode():
         for data in tqdm(dataloader):
-
             images, gt_bboxes = data
             images, gt_bboxes = (
                 images.to(device, non_blocking=True),
@@ -442,6 +486,22 @@ def train_localization(
     # writer: SummaryWriter,
     writer: SummaryWriter = None,  # new parameter to take in a writer
 ):
+    """Runs the full training loop for the localization model.
+
+    For each epoch, calls train_localization_fn() and eval_localization_fn(),
+    saves the model state dict to ``screencropnet_best_model.pt`` whenever the
+    validation loss improves, and optionally logs train/validation loss to
+    TensorBoard via the provided writer.
+
+    Args:
+        model: The localization PyTorch model to be trained and evaluated.
+        trainloader: A DataLoader instance for training.
+        validloader: A DataLoader instance for validation.
+        optimizer: A PyTorch optimizer used to minimize the loss.
+        epochs: An integer indicating how many epochs to train for.
+        device: A target device to compute on (e.g. "cuda" or "cpu").
+        writer: An optional SummaryWriter instance to log results to.
+    """
 
     best_valid_loss = np.Inf
 
@@ -453,7 +513,6 @@ def train_localization(
     model.to(device)
 
     for epoch in tqdm(range(epochs)):
-
         print(
             f"[INFO] train_step for model {model.__class__.__name__} on device '{device}' epoch={epoch}..."
         )
@@ -468,9 +527,9 @@ def train_localization(
             print("WEIGHTS-ARE-SAVED")
             best_valid_loss = valid_loss
 
-        print(f"Epoch : {epoch + 1} train loss : {train_loss} valid loss : {valid_loss}")
-
-
+        print(
+            f"Epoch : {epoch + 1} train loss : {train_loss} valid loss : {valid_loss}"
+        )
 
         ### New: Use the writer parameter to track experiments ###
         # See if there's a writer, if so, log to it

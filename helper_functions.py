@@ -3,22 +3,18 @@ A series of helper functions used throughout the course.
 
 If a function gets defined once and could be used over and over, it'll go in here.
 """
-import torch
-import matplotlib.pyplot as plt
-import numpy as np
-
-from torch import nn
-
-import os
-import zipfile
-
-from pathlib import Path
-
-import requests
 
 # Walk through an image classification directory and find out how many files (images)
 # are in each subdirectory.
 import os
+import zipfile
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import requests
+import torch
+import torchvision
 
 
 def walk_through_dir(dir_path):
@@ -173,16 +169,12 @@ def plot_loss_curves(results, to_disk: bool = False):
 
 # Pred and plot image function from notebook 04
 # See creation: https://www.learnpytorch.io/04_pytorch_custom_datasets/#113-putting-custom-image-prediction-together-building-a-function
-from typing import List
-import torchvision
-
-
 def pred_and_plot_image(
     model: torch.nn.Module,
     image_path: str,
-    class_names: List[str] = None,
+    class_names: list[str] = None,
     transform=None,
-    device: torch.device = "cuda" if torch.cuda.is_available() else "cpu",
+    device: torch.device | None = None,
 ):
     """Makes a prediction on a target image with a trained model and plots the image.
 
@@ -203,6 +195,8 @@ def pred_and_plot_image(
                             transform=torchvision.transforms.ToTensor(),
                             device=device)
     """
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # 1. Load in image and convert the tensor values to float32
     target_image = torchvision.io.read_image(str(image_path)).type(torch.float32)

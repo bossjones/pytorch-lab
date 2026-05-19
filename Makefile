@@ -1,61 +1,135 @@
-link-conda-env:
-	ln -sf environments-and-requirements/environment-mac.yml environment.yml
+.PHONY: setup lock sync env-works env-test test test-cov test-cov-html open-cov lint format typecheck check \
+	clean jupyter ipython \
+	data-doctor data-setup \
+	setup-dataset-scratch-env download-dataset unzip-dataset zip-dataset \
+	download-localization-dataset fetch-assets \
+	install-postgres label-studio \
+	claude-telegram-channel \
+	help
 
-link-conda-env-intel:
-	ln -sf environments-and-requirements/environment-mac-intel.yml environment.yml
+.DEFAULT_GOAL := help
 
-conda-update:
-	conda env update
-	conda list --explicit > installed_conda.txt
-	pip freeze > installed_pip.txt
+help: ## show this help message
+	@uv run python -c "import re; \
+	[[print(f'\033[36m{m[0]:<20}\033[0m {m[1]}') for m in re.findall(r'^([a-zA-Z_-]+):.*?## (.*)$$', open(makefile).read(), re.M)] for makefile in ('$(MAKEFILE_LIST)').strip().split()]"
 
-conda-update-prune:
-	conda env update --prune
-	conda list --explicit > installed_conda.txt
-	pip freeze > installed_pip.txt
+# --- Environment (uv) -------------------------------------------------------
+setup sync: ## create or update .venv from uv.lock
+	uv sync
 
-conda-activate:
-	pyenv activate anaconda3-2022.05
-	conda activate pytorch-lab3
+lock: ## re-resolve dependencies and update uv.lock
+	uv lock
 
-conda-delete:
-	conda env remove -n pytorch-lab3
+env-works: ## verify MPS and matplotlib are functional
+	uv run python ./contrib/is-mps-available.py
+	uv run python ./contrib/does-matplotlib-work.py
 
-conda-lock-env:
-	conda env export > env.yml.lock
-	conda list --explicit > spec-file.txt
+env-test: env-works ## alias for env-works
 
-conda-env-export:
-	conda env export
-	conda list --explicit
+# --- Quality ----------------------------------------------------------------
+test: ## run pytest
+	uv run pytest
 
-conda-history:
-	conda env export --from-history
+test-cov: ## run pytest with terminal coverage report
+	uv run pytest --cov --cov-report=term-missing
 
-env-works:
-	python ./contrib/is-mps-available.py
-	python ./contrib/does-matplotlib-work.py
+test-cov-html: ## run pytest and generate htmlcov/ HTML coverage report
+	uv run pytest --cov --cov-report=term-missing --cov-report=html
 
-env-test: env-works
+open-cov: ## open htmlcov/index.html in the default browser
+	open htmlcov/index.html
 
-setup-dataset-scratch-env:
+lint: ## lint with ruff
+	uv run ruff check .
+
+format: ## format with ruff
+	uv run ruff format .
+
+typecheck: ## type-check with pyright
+	uv run pyright
+
+check: lint typecheck test ## run lint, typecheck, and tests
+
+# --- Dev utilities ----------------------------------------------------------
+clean: ## remove build artifacts, caches, and coverage data
+	find . -name '*.pyc' -delete; \
+	find . -name '*.pyo' -delete; \
+	find . -name '__pycache__' -type d -exec rm -rf {} +; \
+	rm -f .coverage; \
+	rm -rf htmlcov
+
+jupyter: ## start Jupyter notebook server
+	uv run jupyter notebook
+
+ipython: ## launch IPython REPL
+	uv run ipython
+
+claude-telegram-channel: ## run Claude with official Telegram channel plugin (auto mode)
+	claude --channels plugin:telegram@claude-plugins-official --enable-auto-mode
+
+# --- Dataset ----------------------------------------------------------------
+# FORCE is opt-in: unset by default. `make data-setup FORCE=1` (or
+# `FORCE=1 make data-setup`) overrides every idempotency guard below and
+# re-fetches classification + localization assets. Command-line/env vars
+# propagate through the $(MAKE) sub-invocations in data-setup automatically.
+FORCE ?=
+DATASET_DIR := ./scratch/datasets/twitter_facebook_tiktok
+DATASET_ZIP := ./scratch/datasets/twitter_facebook_tiktok.zip
+DATASET_URL := https://www.dropbox.com/s/8w1jkcvdzmh7khh/twitter_facebook_tiktok.zip?dl=1
+
+data-doctor: ## verify status of all expected dataset files and directories
+	uv run contrib/data_doctor.py
+
+data-setup: ## fetch all datasets end to end (classification + localization)
+	$(MAKE) setup-dataset-scratch-env
+	$(MAKE) download-dataset
+	$(MAKE) unzip-dataset
+	$(MAKE) fetch-assets
+
+setup-dataset-scratch-env: ## create scratch/datasets/ directory layout
 	bash contrib/setup-dataset-scratch-env.sh
 
-download-dataset: setup-dataset-scratch-env
-	curl -L 'https://www.dropbox.com/s/8w1jkcvdzmh7khh/twitter_facebook_tiktok.zip?dl=1' > ./scratch/datasets/twitter_facebook_tiktok.zip
-	unzip -l ./scratch/datasets/twitter_facebook_tiktok.zip
+download-dataset: setup-dataset-scratch-env ## download twitter/facebook/tiktok classification dataset
+	@if [ -n "$(FORCE)" ]; then \
+		echo "[force] re-downloading dataset zip"; \
+		curl -L '$(DATASET_URL)' > $(DATASET_ZIP); \
+	elif [ -d "$(DATASET_DIR)" ]; then \
+		echo "[skip]  dataset already extracted at $(DATASET_DIR) (FORCE=1 to re-download)"; \
+	elif [ -f "$(DATASET_ZIP)" ]; then \
+		echo "[skip]  zip already present at $(DATASET_ZIP) (FORCE=1 to re-download)"; \
+	else \
+		curl -L '$(DATASET_URL)' > $(DATASET_ZIP); \
+	fi
+# unzip -l ./scratch/datasets/twitter_facebook_tiktok.zip
 
-unzip-dataset:
-	unzip ./scratch/datasets/twitter_facebook_tiktok.zip -d './scratch/datasets'
-	rm -fv ./scratch/datasets/twitter_facebook_tiktok.zip
+unzip-dataset: ## unzip the classification dataset into scratch/datasets/
+	@if [ -d "$(DATASET_DIR)" ] && [ -z "$(FORCE)" ]; then \
+		echo "[skip]  dataset already extracted at $(DATASET_DIR) (FORCE=1 to re-extract)"; \
+	else \
+		if [ -n "$(FORCE)" ]; then \
+			echo "[force] removing $(DATASET_DIR) before re-extract"; \
+			rm -rf "$(DATASET_DIR)"; \
+		fi; \
+		unzip -o $(DATASET_ZIP) -d ./scratch/datasets; \
+		echo "[keep]  zip retained at $(DATASET_ZIP) (run 'make clean-dataset-zip' to remove)"; \
+	fi
 
-zip-dataset:
+clean-dataset-zip: ## remove the downloaded classification zip
+	rm -fv $(DATASET_ZIP)
+
+zip-dataset: ## re-zip the classification dataset
 	bash contrib/zip-dataset.sh
 	ls -ltah ./scratch/datasets/twitter_facebook_tiktok.zip
 
-install-postgres:
+# Localization (screencropnet) assets. Provenance: ai_docs/screencropnet-assets.md
+download-localization-dataset: ## download screencropnet localization dataset only
+	uv run contrib/fetch_screencropnet_assets.py --dataset $(if $(FORCE),--force,)
+
+fetch-assets: ## download screencropnet dataset, checkpoints, and sample image
+	uv run contrib/fetch_screencropnet_assets.py --all $(if $(FORCE),--force,)
+
+install-postgres: ## install PostgreSQL 14 via Homebrew
 	brew install postgresql@14
 
-label-studio:
+label-studio: ## launch Label Studio annotation tool
 	label-studio
-

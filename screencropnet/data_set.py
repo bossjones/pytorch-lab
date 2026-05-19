@@ -1,22 +1,14 @@
 from __future__ import annotations
 
-import sys
-
-sys.path.append("../")
 import cv2
-import torch
 import pandas as pd
-from typing import Union, Optional
-from torchvision import datasets, transforms
+import torch
 from torch import Tensor
-from icecream import ic
-import numpy as np
 
-from ml_types import ImageNdarrayBGR, ImageNdarrayHWC, TensorCHW
+from screencropnet.ml_types import ImageNdarrayHWC, TensorCHW
 
 
 class ObjLocDataset(torch.utils.data.Dataset):
-
     """Localization Dataset."""
 
     def __init__(self, df: pd.DataFrame, transform=None, root_dir: str = ""):

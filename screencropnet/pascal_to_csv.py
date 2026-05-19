@@ -2,10 +2,11 @@
 
 # SOURCE: https://gist.github.com/rotemtam/88d9a4efae243fc77ed4a0f9917c8f6c
 
-import os
 import glob
-import pandas as pd
+import os
 import xml.etree.ElementTree as ET
+
+import pandas as pd
 
 
 def xml_to_csv(path: str):
@@ -52,8 +53,9 @@ def main():
     for ds in datasets:
         image_path = os.path.join("/Users/malcolm/Downloads", ds, "annotations")
         xml_df = xml_to_csv(image_path)
-        xml_df.to_csv("labels2_{}.csv".format(ds), index=None)
+        xml_df.to_csv(f"labels2_{ds}.csv", index=None)
         print("Successfully converted xml to csv.")
 
 
-main()
+if __name__ == "__main__":
+    main()

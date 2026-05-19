@@ -1,5 +1,6 @@
-import numpy as np
 from typing import NewType
+
+import numpy as np
 import torch
 
 ImageNdarrayBGR = NewType("ImageBGR", np.ndarray)

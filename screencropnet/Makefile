@@ -1,75 +1,96 @@
+# screencropnet/Makefile — object localization (bbox regression) tasks.
+# Run from the screencropnet/ directory (cwd is screencropnet/ for every recipe).
+# `make` with no args prints help (see .DEFAULT_GOAL below).
+
+# Absolute path of this directory (used by the label-studio docker mounts).
 CURRENT_DIR := $(shell pwd)
 
-train:
-	python main.py --seed 42 --to-disk --debug --interactive --epochs 40
+# Committed sample screenshot, used in place of a machine-local ~/Downloads
+# file so predict/autocrop work on a clean checkout and in CI. Path is relative
+# to screencropnet/ (the fixture lives at repo-root tests/fixtures/).
+FIXTURE_IMAGE := ../tests/fixtures/00006_twitter.PNG
 
-train_100:
-	python main.py --seed 42 --to-disk --debug --interactive --epochs 378
+# Bare `make` shows the help menu instead of launching a 40-epoch train run.
+.DEFAULT_GOAL := help
 
-transfer_learning:
-	python main.py --seed 42 --to-disk --debug --interactive --epochs 40 --weights ./models/ScreenCropNetV1_ObjLocModelV1_pascalVOC_40_epochs.pth
+.PHONY: train train_100 transfer_learning transfer_train train_one evaluate test \
+	predict autocrop autocrop-resize bad-predict worst-first tensorboard \
+	lint format typecheck get-best-model zip-dataset label-studio help
 
-train_one:
-	python main.py --seed 42 --debug --epochs 1 --weights ./models/ScreenCropNetV1_ObjLocModelV1_pascalVOC_40_epochs.pth
+help: ## show this help message
+	@uv run python -c "import re; \
+	[[print(f'\033[36m{m[0]:<20}\033[0m {m[1]}') for m in re.findall(r'^([a-zA-Z0-9_-]+):.*?## (.*)$$', open(makefile).read(), re.M)] for makefile in ('$(MAKEFILE_LIST)').strip().split()]"
 
-transfer_train: transfer_learning
+train: ## train ObjLocModel for 40 epochs
+	# --to-disk saves checkpoints/plots; --interactive shows progress; --debug verbose
+	uv run python main.py --seed 42 --to-disk --debug --interactive --epochs 40
 
-evaluate:
-	python main.py --to-disk --debug --test --epochs 5 --weights ./models/ScreenCropNetV1_378_epochs.pth
+train_100: ## train ObjLocModel for 378 epochs (long run)
+	# same as `train` but 378 epochs (the "100%" full-length schedule)
+	uv run python main.py --seed 42 --to-disk --debug --interactive --epochs 378
 
-test: evaluate
+transfer_learning: ## resume training (40 epochs) from the 40-epoch checkpoint
+	# --weights loads an existing .pth to continue/fine-tune from
+	uv run python main.py --seed 42 --to-disk --debug --interactive --epochs 40 --weights ./models/ScreenCropNetV1_ObjLocModelV1_pascalVOC_40_epochs.pth
 
-pylint:
-	pylint --enable F,E --output-format=colorized --disable=all --rcfile ../lint-configs-python/python/pylintrc main.py
+transfer_train: transfer_learning ## alias for `transfer_learning`
 
-mypy:
-	mypy --follow-imports=silent --ignore-missing-imports --show-column-numbers --no-pretty main.py
+train_one: ## train a single epoch from the 40-epoch checkpoint (smoke test)
+	# 1-epoch run resuming from --weights; quick sanity check of the pipeline
+	uv run python main.py --seed 42 --debug --epochs 1 --weights ./models/ScreenCropNetV1_ObjLocModelV1_pascalVOC_40_epochs.pth
 
-black:
-	black .
+evaluate: ## evaluate the 378-epoch model on the test set
+	# --test switches to eval/test mode against the held-out split
+	uv run python main.py --to-disk --debug --test --epochs 5 --weights ./models/ScreenCropNetV1_378_epochs.pth
 
-isort:
-	isort --atomic .
+test: evaluate ## alias for `evaluate`
 
-pytype:
-	pytype *
+predict: ## run inference on the committed fixture screenshot, save result to disk
+	# --predict runs single-image inference; --to-disk writes the annotated output
+	uv run python main.py --predict "$(FIXTURE_IMAGE)" --weights ./models/ScreenCropNetV1_378_epochs.pth --to-disk
 
-py-spy:
-	py-spy record -o profile.svg -- python main.py
+autocrop: ## crop the fixture screenshot using the predicted bbox
+	# --autocrop predicts a bbox then writes the cropped image to disk
+	uv run python main.py --autocrop "$(FIXTURE_IMAGE)" --weights ./models/ScreenCropNetV1_378_epochs.pth --to-disk
 
-py-spy-top:
-	py-spy top -- python main.py
+autocrop-resize: ## autocrop the fixture screenshot with darkmode resize
+	# --resize "darkmode" post-processes the crop for dark-mode screenshots
+	uv run python main.py --resize "darkmode" --autocrop "$(FIXTURE_IMAGE)" --weights ./models/ScreenCropNetV1_378_epochs.pth --to-disk
 
-autoflake:
-# autoflake --recursive --remove-unused-variables --remove-all-unused-imports --in-place *.py
-	autoflake --recursive --in-place *.py
+worst-first: ## rank test-set images by highest loss, write worst-first.csv
+	# --worst-first sorts predictions worst→best; --results writes the CSV report
+	uv run python main.py --to-disk --debug --predict ~/dev/bossjones/pytorch-lab/scratch/datasets/twitter_facebook_tiktok/test --weights ./models/ScreenNet_efficientnet_b0_basic_10_epochs.pth --worst-first --results ./worst-first.csv
 
-pynguin:
-	mkdir -p /tmp/pynguin-results || true
-	pynguin \
-        --project-path ./ \
-        --output-path /tmp/pynguin-results \
-        --module-name main \
-        -v
-memray:
-	memray run --live main.py
+tensorboard: ## launch TensorBoard on the runs/ logdir
+	# serves the training scalars/images logged under runs/
+	uv run tensorboard --logdir runs/
 
-tensorboard:
-	tensorboard --logdir runs/
+# --- Quality (uses root pyproject.toml config) ------------------------------
+lint: ## ruff lint the package
+	# ruff check . (config in root pyproject.toml)
+	uv run ruff check .
 
-predict:
-	python main.py --predict "~/Downloads/IMG_6400.PNG" --weights ./models/ScreenCropNetV1_378_epochs.pth --to-disk
+format: ## ruff-format the package
+	# ruff format . (replaces black + isort)
+	uv run ruff format .
 
-autocrop:
-	python main.py --autocrop "~/Downloads/2021-10-20_12-44-46_000.png" --weights ./models/ScreenCropNetV1_378_epochs.pth --to-disk
+typecheck: ## pyright type-check main.py
+	# pyright in basic mode (config in root pyproject.toml)
+	uv run pyright main.py
 
-autocrop-resize:
-	python main.py --resize "darkmode" --autocrop "~/Downloads/2021-10-20_12-44-46_000.png" --weights ./models/ScreenCropNetV1_378_epochs.pth --to-disk
+# --- Assets -----------------------------------------------------------------
+get-best-model: ## download the pretrained 378-epoch .pth from Dropbox
+	# create models/ then fetch the checkpoint into it
+	mkdir -p models || true
+	curl -L 'https://www.dropbox.com/s/9903r4jy02rmuzh/ScreenCropNetV1_378_epochs.pth?dl=1' > models/ScreenCropNetV1_378_epochs.pth
 
-bad-predict:
-	python main.py --predict ../bad_image_test.jpg --weights ./models/ScreenNet_efficientnet_b0_basic_10_epochs.pth --interactive --to-disk
+zip-dataset: ## zip the localization dataset and list the resulting archive
+	# zip-dataset.sh builds the archive under ~/Downloads/datasets/
+	bash ./zip-dataset.sh
+	ls -ltah ~/Downloads/datasets/twitter_screenshots_localization_dataset.zip
 
-label-studio:
+label-studio: ## run Label Studio in Docker (annotation UI on :8080)
+	# mounts ./mydata (DB) and ./myfiles (local files) into the container
 	docker run -it --rm -p 8080:8080 \
 	-v $(CURRENT_DIR)/mydata:/label-studio/data \
 	--env LOCAL_FILES_SERVING_ENABLED=true \
@@ -81,14 +102,3 @@ label-studio:
 	-v $(CURRENT_DIR)/myfiles:/label-studio/files \
 	heartexlabs/label-studio:latest \
 	label-studio
-
-worst-first:
-	python main.py --to-disk --debug --predict ~/dev/bossjones/pytorch-lab/scratch/datasets/twitter_facebook_tiktok/test --weights ./models/ScreenNet_efficientnet_b0_basic_10_epochs.pth --worst-first --results ./worst-first.csv
-
-zip-dataset:
-	bash ./zip-dataset.sh
-	ls -ltah ~/Downloads/datasets/twitter_screenshots_localization_dataset.zip
-
-get-best-model:
-	mkdir -p models || true
-	curl -L 'https://www.dropbox.com/s/9903r4jy02rmuzh/ScreenCropNetV1_378_epochs.pth?dl=1' > models/ScreenCropNetV1_378_epochs.pth

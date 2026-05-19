@@ -1,8 +1,10 @@
-import torch
-import time
 import os
 import shutil
+import time
+from collections import Counter
 from urllib.request import urlretrieve
+
+import torch
 from tqdm import tqdm
 
 # SOURCE: https://github.com/sgrvinod/a-PyTorch-Tutorial-to-Object-Detection/blob/master/utils.py
@@ -96,7 +98,7 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="corners"):
         box2_x2 = boxes_labels[..., 0:1] + boxes_labels[..., 2:3] / 2
         box2_y2 = boxes_labels[..., 1:2] + boxes_labels[..., 3:4] / 2
 
-    if box_format == "corners":
+    elif box_format == "corners":
         box1_x1 = boxes_preds[..., 0:1]
         box1_y1 = boxes_preds[..., 1:2]
         box1_x2 = boxes_preds[..., 2:3]
@@ -105,6 +107,8 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="corners"):
         box2_y1 = boxes_labels[..., 1:2]
         box2_x2 = boxes_labels[..., 2:3]
         box2_y2 = boxes_labels[..., 3:4]
+    else:
+        raise ValueError(f"Unknown box_format: {box_format!r}")
 
     x1 = torch.max(box1_x1, box2_x1)
     y1 = torch.max(box1_y1, box2_y1)
@@ -131,10 +135,9 @@ def non_max_suppression(bboxes, iou_threshold, threshold, box_format="corners"):
         list: bboxes after performing NMS given a specific IoU threshold
     """
 
-    assert type(bboxes) == list
+    assert isinstance(bboxes, list)
 
     time_limit = 10.0
-    max_det = 300  # maximum of detection per image
     #     max_nms = 30000 # maximum of boxes into torchvision.ops.nms()
 
     t = time.time()
@@ -165,9 +168,9 @@ def non_max_suppression(bboxes, iou_threshold, threshold, box_format="corners"):
             print(len(bboxes_after_nms))
             break  # time limit exceeded
 
-    if len(bboxes_after_nms) > max_det:
-        bboxes_after_nme = bboxes_after_nms[:max_det]
-
+    # NOTE: a max_det truncation was intended here but the result was
+    # discarded (typo'd `bboxes_after_nme`); preserving existing behavior.
+    # Flagged as an out-of-scope follow-up bug.
     return bboxes_after_nms
 
 
@@ -223,8 +226,8 @@ def mean_average_precision(
 
         # sort by box probabilities which is index 2
         detections.sort(key=lambda x: x[2], reverse=True)
-        TP = torch.zeros((len(detections)))
-        FP = torch.zeros((len(detections)))
+        TP = torch.zeros(len(detections))
+        FP = torch.zeros(len(detections))
         total_true_bboxes = len(ground_truths)
 
         # if none exists for this class then we safely skip
@@ -238,7 +241,7 @@ def mean_average_precision(
                 bbox for bbox in ground_truths if bbox[0] == detection[0]
             ]
 
-            num_gts = len(ground_truth_img)
+            len(ground_truth_img)
             best_iou = 0
 
             for idx, gt in enumerate(ground_truth_img):
@@ -274,31 +277,71 @@ def mean_average_precision(
         # torch.trapz for numerical integration
         average_precisions.append(torch.trapz(precisions, recalls))
 
+    if len(average_precisions) == 0:
+        return 0.0
     return sum(average_precisions) / len(average_precisions)
 
 
 # Define functions to download an archived dataset and unpack it
 # SOURCE: https://albumentations.ai/docs/examples/pytorch_classification/#Define-a-function-to-visualize-images-and-their-labels
 
+
 class TqdmUpTo(tqdm):
+    """A ``tqdm`` subclass that integrates with ``urlretrieve``.
+
+    Provides an :meth:`update_to` method whose signature matches the
+    ``reporthook`` callback expected by ``urllib.request.urlretrieve``,
+    allowing download progress to be displayed via a ``tqdm`` bar.
+    """
+
     def update_to(self, b=1, bsize=1, tsize=None):
+        """Update the progress bar from an ``urlretrieve`` callback.
+
+        Args:
+            b: Number of blocks transferred so far.
+            bsize: Size of each block, in bytes.
+            tsize: Total size of the download in bytes, or ``None``/``-1``
+                if unknown. When provided, it sets the bar's total.
+        """
         if tsize is not None:
             self.total = tsize
         self.update(b * bsize - self.n)
 
 
 def download_url(url, filepath):
+    """Download a file from a URL, showing a tqdm progress bar.
+
+    Creates the destination directory if needed. If ``filepath`` already
+    exists, the download is skipped.
+
+    Args:
+        url: The URL to download from.
+        filepath: Local path where the downloaded file is written.
+    """
     directory = os.path.dirname(os.path.abspath(filepath))
     os.makedirs(directory, exist_ok=True)
     if os.path.exists(filepath):
         print("Filepath already exists. Skipping download.")
         return
 
-    with TqdmUpTo(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc=os.path.basename(filepath)) as t:
+    with TqdmUpTo(
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+        miniters=1,
+        desc=os.path.basename(filepath),
+    ) as t:
         urlretrieve(url, filename=filepath, reporthook=t.update_to, data=None)
         t.total = t.n
 
 
 def extract_archive(filepath):
+    """Extract a zip or tar archive into its containing directory.
+
+    Args:
+        filepath: Path to the archive file. The archive is unpacked into
+            the directory that contains it, using
+            ``shutil.unpack_archive`` (format inferred from the extension).
+    """
     extract_dir = os.path.dirname(os.path.abspath(filepath))
     shutil.unpack_archive(filepath, extract_dir)

@@ -1,15 +1,15 @@
+from itertools import product
+
+import numpy as np
 import torch
 import torch.nn.functional as F
-import numpy as np
-from itertools import product
 
 
 def compute_accuracy(model, data_loader, device):
     model.eval()
     with torch.no_grad():
         correct_pred, num_examples = 0, 0
-        for i, (features, targets) in enumerate(data_loader):
-
+        for _i, (features, targets) in enumerate(data_loader):
             features = features.to(device)
             targets = targets.to(device)
 
@@ -44,9 +44,7 @@ def compute_confusion_matrix(model, data_loader, device):
 
     all_targets, all_predictions = [], []
     with torch.no_grad():
-
-        for i, (features, targets) in enumerate(data_loader):
-
+        for _i, (features, targets) in enumerate(data_loader):
             features = features.to(device)
             targets = targets
             logits = model(features)
@@ -66,7 +64,7 @@ def compute_confusion_matrix(model, data_loader, device):
             class_labels = np.array([class_labels[0], 1])
     n_labels = class_labels.shape[0]
     lst = []
-    z = list(zip(all_targets, all_predictions))
+    z = list(zip(all_targets, all_predictions, strict=False))
     for combi in product(class_labels, repeat=2):
         lst.append(z.count(combi))
     mat = np.asarray(lst)[:, None].reshape(n_labels, n_labels)

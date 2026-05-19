@@ -1,0 +1,19 @@
+<annotation>
+  <folder>fixtures</folder>
+  <filename>00006_twitter.PNG</filename>
+  <path>00006_twitter.PNG</path>
+  <size>
+    <width>1179</width>
+    <height>2556</height>
+    <depth>3</depth>
+  </size>
+  <object>
+    <name>screen</name>
+    <bndbox>
+      <xmin>10</xmin>
+      <ymin>20</ymin>
+      <xmax>110</xmax>
+      <ymax>220</ymax>
+    </bndbox>
+  </object>
+</annotation>

@@ -5,137 +5,98 @@
 # import pdb
 # pdb = pdb.pdb
 
+# Try to get torchinfo, install it if it doesn't work
+import argparse
 import os
 import os.path
 import pathlib
 import platform
-from tqdm.auto import tqdm
+import random
+import shutil
 
 # ---------------------------------------------------------------------------
 # Import rich and whatever else we need
 # %load_ext rich
 # %matplotlib inline
 import sys
-
-import bpdb
-import pandas as pd
-
-# from rich_dataframe import prettify
-
-
-extra_modules_path_api = pathlib.Path("../going_modular")
-extra_modules_path = os.path.abspath(str(extra_modules_path_api))
-# print(extra_modules_path)
-
-# sys.path.insert(1, extra_modules_path)
-sys.path.append(extra_modules_path)
-sys.path.append("../")
-# import better_exceptions
-import better_exceptions
-import devices  # pylint: disable=import-error
-import rich
-
-# ---------------------------------------------------------------------------
-import torch
-import torchvision
-
-# from rich.traceback import install
-
-# install(show_locals=True)
-from icecream import ic
-from rich import box, inspect, print
-from rich.console import Console
-from rich.table import Table
-from torchvision import datasets, transforms
-
-better_exceptions.hook()
-
-console: Console = Console()
-# ---------------------------------------------------------------------------
-
-
-assert int(torch.__version__.split(".")[1]) >= 12, "torch version should be 1.12+"
-assert (
-    int(torchvision.__version__.split(".")[1]) >= 13
-), "torchvision version should be 0.13+"
-# print(f"torch version: {torch.__version__}")
-# print(f"torchvision version: {torchvision.__version__}")
-# ---------------------------------------------------------------------------
-
-# Continue with regular imports
-import matplotlib.pyplot as plt
-import mlxtend
-import torch
-import torchmetrics
-import torchvision
-from torch import nn
-from torchinfo import summary
-from torchvision import transforms
-
-# breakpoint()
-from going_modular import data_setup, engine, utils  # pylint: disable=no-name-in-module
-
-# Try to get torchinfo, install it if it doesn't work
-
-
-# print(f"mlxtend version: {mlxtend.__version__}")
-assert (
-    int(mlxtend.__version__.split(".")[1]) >= 19
-), "mlxtend verison should be 0.19.0 or higher"
-
-import argparse
-import os
-import random
-import shutil
 import warnings
 import zipfile
 from enum import Enum
 from itertools import product
 from pathlib import Path
 from timeit import default_timer as timer
-from typing import List, Optional, Tuple, Union, Dict
 from urllib.parse import urlparse
 
+# from rich_dataframe import prettify
+import better_exceptions
+import bpdb
 import matplotlib
+
+# ---------------------------------------------------------------------------
+# Continue with regular imports
+import matplotlib.pyplot as plt
+import mlxtend
 import numpy as np
-import numpy.typing as npt
+import pandas as pd
 import requests
 
+# ---------------------------------------------------------------------------
 # SOURCE: https://github.com/rasbt/deeplearning-models/blob/35aba5dc03c43bc29af5304ac248fc956e1361bf/pytorch_ipynb/helper_evaluate.py
 import torch
-import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.parallel
 import torch.optim
+import torch.profiler
 import torch.utils.data
 import torch.utils.data.distributed
+import torchvision
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torchvision.transforms as transforms
+import torchvision.transforms.functional as pytorch_transforms_functional
+from fastai.data.transforms import get_image_files
+
+# from rich.traceback import install
+# install(show_locals=True)
+from icecream import ic
 from mlxtend.plotting import plot_confusion_matrix
-import PIL
 from PIL import Image
-from torch.optim.lr_scheduler import StepLR
-from torch.utils.data import Subset
+from rich import box, print
+from rich.console import Console
+from rich.table import Table
 from torch.utils.tensorboard import SummaryWriter
-from torchmetrics import ConfusionMatrix
+from torchinfo import summary
+from tqdm.auto import tqdm
 from watermark import watermark
+
+# breakpoint()
+from going_modular import data_setup, engine, utils  # pylint: disable=no-name-in-module
 
 # Import accuracy metric
 from helper_functions import (  # Note: could also use torchmetrics.Accuracy()
-    accuracy_fn,
     plot_loss_curves,
 )
-import torch.profiler
-import fastai
-from fastai.data.transforms import get_image_files
-import torchvision.transforms.functional as pytorch_transforms_functional
+from screennet import devices
 
-# SOURCE: https://github.com/pytorch/pytorch/issues/78924
-torch.set_num_threads(1)
+assert int(torch.__version__.split(".")[1]) >= 12, "torch version should be 1.12+"
+assert int(torchvision.__version__.split(".")[1]) >= 13, (
+    "torchvision version should be 0.13+"
+)
+assert int(mlxtend.__version__.split(".")[1]) >= 19, (
+    "mlxtend verison should be 0.19.0 or higher"
+)
+
+
+def _install_exception_hooks() -> None:
+    """Install pretty-traceback hooks. Called from main(), never at import."""
+    better_exceptions.hook()
+
+
+console: Console = Console()
+
 
 # SOURCE: https://github.com/pytorch/vision/blob/main/references/classification/train.py
 def _get_cache_path(filepath):
@@ -214,7 +175,7 @@ def predict_from_dir(
     path_to_image_from_cli: str,
     model: torch.nn.Module,
     transforms: torchvision.transforms,
-    class_names: List[str],
+    class_names: list[str],
     device: torch.device,
     args: argparse.Namespace,
 ):
@@ -236,7 +197,12 @@ def predict_from_dir(
 
     for paths_item in paths:
         predict_from_file(
-            paths_item, model, transforms, class_names, device, args,
+            paths_item,
+            model,
+            transforms,
+            class_names,
+            device,
+            args,
         )
 
 
@@ -244,7 +210,7 @@ def predict_from_file(
     path_to_image_from_cli: str,
     model: torch.nn.Module,
     transforms: torchvision.transforms,
-    class_names: List[str],
+    class_names: list[str],
     device: torch.device,
     args: argparse.Namespace,
 ):
@@ -388,7 +354,7 @@ def fix_path(path: str):
 
 def from_pil_image_to_plt_display(
     img: Image,
-    pred_dicts: List[Dict],
+    pred_dicts: list[dict],
     to_disk: bool = True,
     interactive: bool = True,
     fname: str = "plot.png",
@@ -473,11 +439,10 @@ def download_and_predict(
     url: str,
     model: torch.nn.Module,
     data_path: pathlib.PosixPath,
-    class_names: List[str],
+    class_names: list[str],
     device: torch.device = None,
 ):
     # Download custom image
-    urlparse(url).path
     fname = Path(urlparse(url).path).name
 
     # Setup custom image path
@@ -506,7 +471,7 @@ def download_and_predict(
 
 def show_confusion_matrix_helper(
     cmat: np.ndarray,
-    class_names: List[str],
+    class_names: list[str],
     to_disk: bool = True,
     fname: str = "plot.png",
 ):
@@ -514,7 +479,7 @@ def show_confusion_matrix_helper(
     fig, ax = plot_confusion_matrix(
         conf_mat=cmat,
         class_names=class_names,
-        norm_colormap=matplotlib.colors.LogNorm()
+        norm_colormap=matplotlib.colors.LogNorm(),
         # normed colormaps highlight the off-diagonals
         # for high-accuracy models better
     )
@@ -532,8 +497,7 @@ def compute_accuracy(
     model.eval()
     with torch.no_grad():
         correct_pred, num_examples = 0, 0
-        for i, (features, targets) in enumerate(data_loader):
-
+        for _i, (features, targets) in enumerate(data_loader):
             features = features.to(device)
             targets = targets.to(device)
 
@@ -572,9 +536,7 @@ def compute_confusion_matrix(
 
     all_targets, all_predictions = [], []
     with torch.no_grad():
-
-        for i, (features, targets) in enumerate(data_loader):
-
+        for _i, (features, targets) in enumerate(data_loader):
             features = features.to(device)
             targets = targets
             logits = model(features)
@@ -594,7 +556,7 @@ def compute_confusion_matrix(
             class_labels = np.array([class_labels[0], 1])
     n_labels = class_labels.shape[0]
     lst = []
-    z = list(zip(all_targets, all_predictions))
+    z = list(zip(all_targets, all_predictions, strict=False))
     for combi in product(class_labels, repeat=2):
         lst.append(z.count(combi))
     mat = np.asarray(lst)[:, None].reshape(n_labels, n_labels)
@@ -605,7 +567,7 @@ def run_confusion_matrix(
     model: torch.nn.Module,
     test_dataloader: torch.utils.data.DataLoader,
     device: torch.device,
-    class_names: List[str],
+    class_names: list[str],
 ):
 
     cmat = compute_confusion_matrix(model, test_dataloader, device)
@@ -631,7 +593,7 @@ def run_validate(
 
     # End the timer and print out how long it took
     end_time = timer()
-    print(f"[INFO] Total testing time: {end_time-start_time:.3f} seconds")
+    print(f"[INFO] Total testing time: {end_time - start_time:.3f} seconds")
     ic(test_loss)
     ic(test_acc)
 
@@ -775,7 +737,7 @@ def write_training_results_to_csv(
     )
 
 
-def write_predict_results_to_csv(pred_dicts: List[Dict], args: argparse.Namespace):
+def write_predict_results_to_csv(pred_dicts: list[dict], args: argparse.Namespace):
     # Create results dict
     pred_df = pd.DataFrame(pred_dicts)
     pred_df.drop(columns=["class_name", "correct"], inplace=True)
@@ -791,7 +753,7 @@ def df_to_table(
     pandas_dataframe: pd.DataFrame,
     rich_table: Table,
     show_index: bool = True,
-    index_name: Optional[str] = None,
+    index_name: str | None = None,
 ) -> Table:
     """Convert a pandas.DataFrame obj into a rich.Table obj.
     Args:
@@ -890,14 +852,14 @@ def clean_dir_images(image_path):
         try:
             f.unlink()
         except OSError as e:
-            print("Error: %s : %s" % (f, e.strerror))
+            print(f"Error: {f} : {e.strerror}")
 
 
 def clean_dirs_in_dir(image_path):
     try:
         shutil.rmtree(image_path)
     except OSError as e:
-        print("Error: %s : %s" % (image_path, e.strerror))
+        print(f"Error: {image_path} : {e.strerror}")
 
 
 def setup_workspace(data_path: pathlib.PosixPath, image_path: pathlib.PosixPath):
@@ -935,7 +897,7 @@ def setup_workspace(data_path: pathlib.PosixPath, image_path: pathlib.PosixPath)
 
 # boss: use this to instantiate a new model class with all the proper setup as before
 def create_effnetb0_model(
-    device: str, class_names: List[str], args: argparse.Namespace
+    device: str, class_names: list[str], args: argparse.Namespace
 ) -> torch.nn.Module:
     """Create an instance of pretrained model EfficientNet_B0, freeze all base layers and define classifier. Return model class
 
@@ -984,10 +946,14 @@ def get_model_summary(
     model: torch.nn.Module,
     input_size: tuple = (32, 3, 224, 224),
     verbose: int = 0,
-    col_names: List[str] = ["input_size", "output_size", "num_params", "trainable"],
+    col_names: list[str] | None = None,
     col_width: int = 20,
-    row_settings: List[str] = ["var_names"],
+    row_settings: list[str] | None = None,
 ):
+    if col_names is None:
+        col_names = ["input_size", "output_size", "num_params", "trainable"]
+    if row_settings is None:
+        row_settings = ["var_names"]
     print(f"Getting model summary for -> {model}")
     # # Do a summary *after* freezing the features and changing the output classifier layer (uncomment for actual output)
     summary(
@@ -1123,10 +1089,16 @@ parser.add_argument(
     help="evaluate model on validation set",
 )
 parser.add_argument(
-    "--test", dest="test", action="store_true", help="test model on validation set",
+    "--test",
+    dest="test",
+    action="store_true",
+    help="test model on validation set",
 )
 parser.add_argument(
-    "--info", dest="info", action="store_true", help="info about this build",
+    "--info",
+    dest="info",
+    action="store_true",
+    help="info about this build",
 )
 parser.add_argument(
     "--download-and-predict",
@@ -1164,7 +1136,10 @@ parser.add_argument(
     help="write files to disk",
 )
 parser.add_argument(
-    "--summary", dest="summary", action="store_true", help="Get model summary output",
+    "--summary",
+    dest="summary",
+    action="store_true",
+    help="Get model summary output",
 )
 parser.add_argument(
     "--worst-first",
@@ -1208,6 +1183,9 @@ best_acc1 = 0
 
 
 def main():
+    _install_exception_hooks()
+    # SOURCE: https://github.com/pytorch/pytorch/issues/78924
+    torch.set_num_threads(1)
     args = parser.parse_args()
     ic(args)
     # rich.inspect(args)
@@ -1229,7 +1207,8 @@ def main():
     if args.gpu is not None:
         warnings.warn(
             "You have chosen a specific GPU. This will completely "
-            "disable data parallelism."
+            "disable data parallelism.",
+            stacklevel=2,
         )
 
     if args.dist_url == "env://" and args.world_size == -1:
@@ -1257,11 +1236,8 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     global best_acc1
     args.gpu = gpu
 
-    y_preds = []
-    y_pred_tensor = None
-
     if args.gpu is not None:
-        print("Use GPU: {} for training".format(args.gpu))
+        print(f"Use GPU: {args.gpu} for training")
 
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:
@@ -1278,7 +1254,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         )
     # create model
     if args.pretrained:
-        ic("=> using pre-trained model '{}'".format(args.arch))
+        ic(f"=> using pre-trained model '{args.arch}'")
         # breakpoint()
         device = devices.get_optimal_device(args)
         # models.__dict__[args.model_weights].DEFAULT = device
@@ -1287,7 +1263,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
         model = models.__dict__[args.arch](weights=weights).to(device)
         model.name = args.arch
     else:
-        ic("=> creating model '{}'".format(args.arch))
+        ic(f"=> creating model '{args.arch}'")
         # breakpoint()
         # weights = models.__dict__[args.model_weights].DEFAULT.to(device)
         # auto_transforms = weights.transforms()
@@ -1339,7 +1315,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
     if torch.cuda.is_available():
         if args.gpu:
-            device = torch.device("cuda:{}".format(args.gpu))
+            device = torch.device(f"cuda:{args.gpu}")
         else:
             device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -1351,14 +1327,9 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     # Data loading code
     if args.dummy:
         print("=> Dummy data is used!")
-        train_dataset = datasets.FakeData(
-            1281167, (3, 224, 224), 1000, transforms.ToTensor()
-        )
-        val_dataset = datasets.FakeData(
-            50000, (3, 224, 224), 1000, transforms.ToTensor()
-        )
+        datasets.FakeData(1281167, (3, 224, 224), 1000, transforms.ToTensor())
+        datasets.FakeData(50000, (3, 224, 224), 1000, transforms.ToTensor())
     else:
-
         # Setup path to data folder
         data_path = Path(args.data)
         image_path = data_path / "twitter_facebook_tiktok"
@@ -1367,7 +1338,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
         train_dataloader: torch.utils.data.DataLoader
         test_dataloader: torch.utils.data.DataLoader
-        class_names: List[str]
+        class_names: list[str]
 
         train_dataloader, test_dataloader, class_names = data_setup.create_dataloaders(
             train_dir=train_dir,
@@ -1379,12 +1350,10 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 
         # get datasets for confusion matrix
         # Use ImageFolder to create dataset(s)
-        train_dataset = train_data = datasets.ImageFolder(
-            train_dir, transform=auto_transforms
-        )
-        val_dataset = test_data = datasets.ImageFolder(
-            test_dir, transform=auto_transforms
-        )
+        # Datasets are constructed for their directory-scan side effect;
+        # the sampler/DataLoader wiring that consumed them is dead/removed.
+        _ = datasets.ImageFolder(train_dir, transform=auto_transforms)
+        _ = datasets.ImageFolder(test_dir, transform=auto_transforms)
 
     # -----------------------------
     # BOSSNEW
@@ -1453,13 +1422,8 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
-            if args.gpu is None:
-                checkpoint = torch.load(args.resume)
-            elif torch.cuda.is_available():
-                # Map model to be loaded to specified single gpu.
-                loc = "cuda:{}".format(args.gpu)
-                checkpoint = torch.load(args.resume, map_location=loc)
+            print(f"=> loading checkpoint '{args.resume}'")
+            checkpoint = load_checkpoint(args.resume, args.gpu)
             args.start_epoch = checkpoint["epoch"]
             best_acc1 = checkpoint["best_acc1"]
             if args.gpu is not None:
@@ -1474,16 +1438,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
                 )
             )
         else:
-            print("=> no checkpoint found at '{}'".format(args.resume))
-
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-        val_sampler = torch.utils.data.distributed.DistributedSampler(
-            val_dataset, shuffle=False, drop_last=True
-        )
-    else:
-        train_sampler = None
-        val_sampler = None
+            print(f"=> no checkpoint found at '{args.resume}'")
 
     if args.info:
         info(args, dataset_root_dir=image_path)
@@ -1617,7 +1572,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: argparse.Namespace):
 def get_random_perdictions_and_plots(
     best_model: nn.Module,
     test_dir: pathlib.PosixPath = "",
-    class_names: List[str] = None,
+    class_names: list[str] = None,
     transform: torchvision.transforms = None,
     device: torch.device = None,
 ):
@@ -1654,7 +1609,7 @@ class Summary(Enum):
     COUNT = 3
 
 
-class AverageMeter(object):
+class AverageMeter:
     """Computes and stores the average and current value"""
 
     def __init__(self, name, fmt=":f", summary_type=Summary.AVERAGE):
@@ -1702,12 +1657,12 @@ class AverageMeter(object):
         elif self.summary_type is Summary.COUNT:
             fmtstr = "{name} {count:.3f}"
         else:
-            raise ValueError("invalid summary type %r" % self.summary_type)
+            raise ValueError(f"invalid summary type {self.summary_type!r}")
 
         return fmtstr.format(**self.__dict__)
 
 
-class ProgressMeter(object):
+class ProgressMeter:
     def __init__(self, num_batches, meters, prefix=""):
         self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
         self.meters = meters
@@ -1754,12 +1709,14 @@ def accuracy(output: torch.Tensor, target: torch.Tensor, topk=(1,)):
 def get_random_images_from_dataset(
     model: torch.nn.Module,
     test_dir: pathlib.PosixPath,
-    class_names: List[str],
+    class_names: list[str],
     num_images_to_plot: int = 3,
     device: torch.device = None,
-    y_preds: List[torch.Tensor] = [],
+    y_preds: list[torch.Tensor] | None = None,
     y_pred_tensor: torch.Tensor = None,
 ):
+    if y_preds is None:
+        y_preds = []
 
     # Get a random list of image paths from test set
     import random
@@ -1790,17 +1747,20 @@ def get_random_images_from_dataset(
 # y_preds = []
 # y_pred_tensor = None
 
+
 # 1. Take in a trained model, class names, image path, image size, a transform and target device
 def pred_and_plot_image(
     model: torch.nn.Module,
     image_path: str,
-    class_names: List[str],
-    image_size: Tuple[int, int] = (224, 224),
+    class_names: list[str],
+    image_size: tuple[int, int] = (224, 224),
     transform: torchvision.transforms = None,
     device: torch.device = None,
-    y_preds: List[torch.Tensor] = [],
+    y_preds: list[torch.Tensor] | None = None,
     y_pred_tensor: torch.Tensor = None,
 ):
+    if y_preds is None:
+        y_preds = []
 
     # 2. Open image
     img = Image.open(image_path)
@@ -1845,7 +1805,7 @@ def pred_and_plot_image(
     ic(target_image_pred_probs)
     y_preds.append(target_image_pred_probs.cpu())
     # boss: Concatenate list of predictions into a tensor
-    y_pred_tensor = torch.cat(y_preds)
+    torch.cat(y_preds)
 
     # 9. Convert prediction probabilities -> prediction labels
     target_image_pred_label = torch.argmax(target_image_pred_probs, dim=1)
@@ -1865,7 +1825,7 @@ def pred_and_plot_image(
 
 
 # wrapper function of common code
-def run_save_model_for_inference(model: torch.nn.Module) -> Tuple[pathlib.PosixPath]:
+def run_save_model_for_inference(model: torch.nn.Module) -> tuple[pathlib.PosixPath]:
     """Save model to disk
 
     Args:
@@ -1884,7 +1844,7 @@ def run_save_model_for_inference(model: torch.nn.Module) -> Tuple[pathlib.PosixP
 def run_get_model_for_inference(
     model: torch.nn.Module,
     device: torch.device,
-    class_names: List[str],
+    class_names: list[str],
     path_to_model: pathlib.PosixPath,
     args: argparse.Namespace,
 ) -> torch.nn.Module:
@@ -1925,18 +1885,18 @@ def save_model_to_disk(my_model_name: str, model: torch.nn.Module):
         obj=model.state_dict(),  # only saving the state_dict() only saves the learned parameters
         f=MODEL_SAVE_PATH,
     )
-    print("Model saved to path {} successfully.".format(MODEL_SAVE_PATH))
+    print(f"Model saved to path {MODEL_SAVE_PATH} successfully.")
     return MODEL_SAVE_PATH
 
 
 # NOTE: https://pytorch.org/tutorials/beginner/saving_loading_models.html#saving-loading-model-for-inference
 def load_model_for_inference(
-    save_path: str, device: str, class_names: List[str], args: argparse.Namespace
+    save_path: str, device: str, class_names: list[str], args: argparse.Namespace
 ) -> nn.Module:
     model = create_effnetb0_model(device, class_names, args)
-    model.load_state_dict(torch.load(save_path))
+    model.load_state_dict(torch.load(save_path, weights_only=True))
     model.eval()
-    print("Model loaded from path {} successfully.".format(save_path))
+    print(f"Model loaded from path {save_path} successfully.")
     # Get the model size in bytes then convert to megabytes
     model_size = Path(save_path).stat().st_size // (1024 * 1024)
     print(f"EfficientNetB2 feature extractor model size: {model_size} MB")
@@ -1948,10 +1908,10 @@ def load_model_for_inference(
 # SOURCE: https://github.com/a-sasikumar/image_caption_errors/blob/d583dc77cfa9938bb15297b3096a959fe6084b66/models/model.py
 def load_model_from_disk(save_path: str, empty_model: nn.Module) -> nn.Module:
     # Loading Model for Inference
-    empty_model.load_state_dict(torch.load(save_path))
+    empty_model.load_state_dict(torch.load(save_path, weights_only=True))
     # Remember that you must call model.eval() to set dropout and batch normalization layers to evaluation mode before running inference. Failing to do this will yield inconsistent inference results.
     empty_model.eval()
-    print("Model loaded from path {} successfully.".format(save_path))
+    print(f"Model loaded from path {save_path} successfully.")
     return empty_model
 
 
@@ -1960,7 +1920,7 @@ def plot_image_with_predicted_label(
     img: Image = None,
     target_image_pred_label: torch.Tensor = None,
     target_image_pred_probs: torch.Tensor = None,
-    class_names: List[str] = None,
+    class_names: list[str] = None,
     fname: str = "plot.png",
 ):
     # 10. Plot image with predicted label and probability
@@ -2037,18 +1997,12 @@ def info(args, dataset_root_dir=""):
     sys.exit(0)
 
 
-# func to save model checkpoint
-# SOURCE: https://github.com/PineAppleUser/CVprojects/blob/ad49656a0a69354c134554a93d90e07913aa0dab/segmentationLungs/utils.py
-def save_checkpoint(state, filename="saved_checkpoint.pth.tar"):
-    print("=> Saving checkpoint")
-    torch.save(state, filename)
-
-
-# func to load model checkpoint
-# SOURCE: https://github.com/PineAppleUser/CVprojects/blob/ad49656a0a69354c134554a93d90e07913aa0dab/segmentationLungs/utils.py
-def load_checkpoint(checkpoint, model):
-    print("=> Loading checkpoint")
-    model.load_state_dict(checkpoint["state_dict"])
+# func to load a full training checkpoint for resume
+def load_checkpoint(resume_path: str, gpu: int | None = None) -> dict:
+    """Load a full training checkpoint (trusted local file, weights_only=False)."""
+    if gpu is not None and torch.cuda.is_available():
+        return torch.load(resume_path, map_location=f"cuda:{gpu}", weights_only=False)
+    return torch.load(resume_path, weights_only=False)
 
 
 # #function to save prediction as an image
@@ -2097,12 +2051,12 @@ def print_train_time(start, end, device=None, machine=None):
 # SOURCE: https://www.learnpytorch.io/09_pytorch_model_deployment/
 # 1. Create a function to return a list of dictionaries with sample, truth label, prediction, prediction probability and prediction time
 def pred_and_store(
-    paths: List[pathlib.Path],
+    paths: list[pathlib.Path],
     model: torch.nn.Module,
     transform: torchvision.transforms,
-    class_names: List[str],
+    class_names: list[str],
     device: torch.device = "",
-) -> List[Dict]:
+) -> list[dict]:
 
     ic(paths)
     ic(model.name)
@@ -2114,7 +2068,6 @@ def pred_and_store(
 
     # 3. Loop through target paths
     for path in tqdm(paths):
-
         # 4. Create empty dictionary to store prediction information for each sample
         pred_dict = {}
 
@@ -2177,16 +2130,15 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as ex:
-
         print(str(ex))
         exc_type, exc_value, exc_traceback = sys.exc_info()
         tb = traceback.TracebackException(exc_type, exc_value, exc_traceback)
         traceback_str = "".join(tb.format_exception_only())
-        print("Error Class: {}".format(str(ex.__class__)))
+        print(f"Error Class: {str(ex.__class__)}")
 
         output = "[{}] {}: {}".format("UNEXPECTED", type(ex).__name__, ex)
         print(output)
-        print("exc_type: {}".format(exc_type))
-        print("exc_value: {}".format(exc_value))
+        print(f"exc_type: {exc_type}")
+        print(f"exc_value: {exc_value}")
         traceback.print_tb(exc_traceback)
         bpdb.pm()

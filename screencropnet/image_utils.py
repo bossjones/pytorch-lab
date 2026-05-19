@@ -1,9 +1,9 @@
 from types import NoneType
+
+import albumentations as A
 import cv2
 import numpy as np
 import torch
-import albumentations as A
-from typing import Optional, Union
 
 
 def opencv_read_and_convert_image(path: str, cvt=cv2.COLOR_BGR2RGB) -> np.ndarray:
@@ -25,17 +25,16 @@ def safe_read_image(path: str):
 
 
 def load_and_transform_image_for_prediction(
-    path: str, transform: Union[A.Compose, NoneType] = None, img_size=140
+    path: str, transform: A.Compose | NoneType = None, img_size=140
 ):
     img = safe_read_image(path)
 
-    if transform is not None:
-        img_transform: A.Compose = A.Compose(
+    if transform is None:
+        img_transform = A.Compose(
             [A.Resize(img_size, img_size)],
-            bbox_params=A.BboxParams(
-                format="pascal_voc", label_fields=["class_labels"]
-            ),
         )
+    else:
+        img_transform = transform
 
     return img, img_transform
 

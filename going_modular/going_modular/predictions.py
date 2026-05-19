@@ -1,27 +1,26 @@
 """
 Utility functions to make predictions.
 
-Main reference for code creation: https://www.learnpytorch.io/06_pytorch_transfer_learning/#6-make-predictions-on-images-from-the-test-set 
+Main reference for code creation: https://www.learnpytorch.io/06_pytorch_transfer_learning/#6-make-predictions-on-images-from-the-test-set
 """
+
+import matplotlib.pyplot as plt
 import torch
 import torchvision
-from torchvision import transforms
-import matplotlib.pyplot as plt
-
-from typing import List, Tuple
-
 from PIL import Image
+from torchvision import transforms
 
 # Set device
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 # Predict on a target image with a target model
 # Function created in: https://www.learnpytorch.io/06_pytorch_transfer_learning/#6-make-predictions-on-images-from-the-test-set
 def pred_and_plot_image(
     model: torch.nn.Module,
-    class_names: List[str],
+    class_names: list[str],
     image_path: str,
-    image_size: Tuple[int, int] = (224, 224),
+    image_size: tuple[int, int] = (224, 224),
     transform: torchvision.transforms = None,
     device: torch.device = device,
 ):
