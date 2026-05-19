@@ -1,0 +1,14 @@
+// .vscode/extensions.json
+{
+    "recommendations": [
+      "ms-python.python",          // OK to keep — provides interpreter selection, debugger glue
+      "anysphere.cursorpyright",   // Cursor's "Python" type checker / language server
+      "ms-python.debugpy",
+      "charliermarsh.ruff",
+      "tamasfe.even-better-toml",
+      "ms-toolsai.jupyter"
+    ],
+    "unwantedRecommendations": [
+      "ms-python.vscode-pylance"   // doesn't work in Cursor; conflicts with cursorpyright
+    ]
+  }
