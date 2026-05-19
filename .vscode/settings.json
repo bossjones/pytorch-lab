@@ -9,8 +9,11 @@
     // The extension ID is "anysphere.cursorpyright" but it shows as just "Python"
     // in the Cursor marketplace. All Pylance python.analysis.* keys live under
     // cursorpyright.analysis.* here.
-    "cursorpyright.analysis.typeCheckingMode": "standard",  // off | basic | standard | strict | all
+    // Keep in sync with [tool.pyright] typeCheckingMode in pyproject.toml so
+    // in-editor diagnostics match `uv run pyright` / `make check`.
+    "cursorpyright.analysis.typeCheckingMode": "basic",  // off | basic | standard | strict | all
     "cursorpyright.analysis.diagnosticMode": "openFilesOnly",
+    "cursorpyright.analysis.importFormat": "absolute",
     "cursorpyright.analysis.autoImportCompletions": true,
     "cursorpyright.analysis.autoSearchPaths": true,
     "cursorpyright.analysis.useLibraryCodeForTypes": true,
@@ -18,10 +21,15 @@
     "cursorpyright.analysis.inlayHints.variableTypes": true,
     "cursorpyright.analysis.inlayHints.callArgumentNames": true,   // bool, not "partial"
     "cursorpyright.analysis.inlayHints.genericTypes": false,
-    "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/src"],
-    "cursorpyright.analysis.stubPath": "${workspaceFolder}/typings",
+    // Mirrors [tool.pyright] extraPaths in pyproject.toml: `going_modular` is
+    // installed via [tool.setuptools] package-dir (going_modular ->
+    // going_modular/going_modular), so point the editor at the same parent.
+    "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/going_modular"],
     "cursorpyright.analysis.diagnosticSeverityOverrides": {
       "reportMissingTypeStubs": "none",
+      // pyproject.toml sets reportPrivateImportUsage = false for torch
+      // re-exports (torch.tensor etc.); mirror it so the editor agrees.
+      "reportPrivateImportUsage": "none",
       "reportUnusedImport": "warning",
       "reportUnusedVariable": "warning"
     },

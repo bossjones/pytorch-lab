@@ -6,7 +6,8 @@
       "ms-python.debugpy",
       "charliermarsh.ruff",
       "tamasfe.even-better-toml",
-      "ms-toolsai.jupyter"
+      "ms-toolsai.jupyter",
+      "editorconfig.editorconfig"  // repo ships a .editorconfig with per-glob rules
     ],
     "unwantedRecommendations": [
       "ms-python.vscode-pylance"   // doesn't work in Cursor; conflicts with cursorpyright
