@@ -16,7 +16,6 @@
     "cursorpyright.analysis.importFormat": "absolute",
     "cursorpyright.analysis.autoImportCompletions": true,
     "cursorpyright.analysis.autoSearchPaths": true,
-    "cursorpyright.analysis.useLibraryCodeForTypes": true,
     "cursorpyright.analysis.inlayHints.functionReturnTypes": true,
     "cursorpyright.analysis.inlayHints.variableTypes": true,
     "cursorpyright.analysis.inlayHints.callArgumentNames": true,   // bool, not "partial"
@@ -25,15 +24,6 @@
     // installed via [tool.setuptools] package-dir (going_modular ->
     // going_modular/going_modular), so point the editor at the same parent.
     "cursorpyright.analysis.extraPaths": ["${workspaceFolder}/going_modular"],
-    "cursorpyright.analysis.diagnosticSeverityOverrides": {
-      "reportMissingTypeStubs": "none",
-      // pyproject.toml sets reportPrivateImportUsage = false for torch
-      // re-exports (torch.tensor etc.); mirror it so the editor agrees.
-      "reportPrivateImportUsage": "none",
-      "reportUnusedImport": "warning",
-      "reportUnusedVariable": "warning"
-    },
-
     // ─── Ruff: lint + format + import-sort ───
     "ruff.nativeServer": "on",
     "ruff.importStrategy": "fromEnvironment",
