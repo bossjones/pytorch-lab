@@ -348,10 +348,11 @@ def test_download_and_predict_skips_download_when_file_exists(
 
     captured = capsys.readouterr()
     # NOTE: the long tmp path makes rich wrap the print() output, so the
-    # phrase spans a newline ("skipping \ndownload."). Normalize whitespace
+    # phrase can span a newline ("already \nexists"). Normalize whitespace
     # before asserting on the message.
-    assert "already exists" in captured.out
-    assert "skipping" in " ".join(captured.out.split())
+    normalized = " ".join(captured.out.split())
+    assert "already exists" in normalized
+    assert "skipping" in normalized
     pred.assert_called_once()
 
 
