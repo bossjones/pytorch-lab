@@ -105,9 +105,9 @@ cd screennet   # or screencropnet
 make lint
 ```
 
-> **Note:** `tasks/`, `label_pointer.py`, `preprocessing_data_loader.py`, and
-> `*.ipynb` files are excluded from linting via `extend-exclude` in `pyproject.toml`.
-> This is intentional — those paths are legacy or generated files.
+> **Note:** `tasks/` and `*.ipynb` files are excluded from linting via
+> `extend-exclude` in `pyproject.toml`. This is intentional — those paths are
+> legacy or generated files.
 
 ---
 

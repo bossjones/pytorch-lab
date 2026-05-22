@@ -15,7 +15,8 @@ FIXTURE_IMAGE := ../tests/fixtures/00006_twitter.PNG
 
 .PHONY: train train_100 transfer_learning transfer_train train_one evaluate test \
 	predict autocrop autocrop-resize bad-predict worst-first tensorboard \
-	lint format typecheck get-best-model zip-dataset label-studio help
+	lint format typecheck get-best-model zip-dataset \
+	label-studio label-studio-local label-studio-docker help
 
 help: ## show this help message
 	@uv run python -c "import re; \
@@ -89,7 +90,19 @@ zip-dataset: ## zip the localization dataset and list the resulting archive
 	bash ./zip-dataset.sh
 	ls -ltah ~/Downloads/datasets/twitter_screenshots_localization_dataset.zip
 
-label-studio: ## run Label Studio in Docker (annotation UI on :8080)
+# Label Studio runs as an isolated uv tool (`uv tool install label-studio`):
+# its pinned requests/pillow versions conflict with the project venv, so it
+# cannot live there. `uvx` == `uv tool run`.
+label-studio: ## launch Label Studio annotation UI on http://localhost:8080
+	uvx label-studio
+
+label-studio-local: ## launch Label Studio serving ../scratch/datasets/ as local files
+	# LOCAL_FILES_* lets you import the localization screenshots without uploading
+	LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true \
+	LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=$(CURRENT_DIR)/../scratch/datasets \
+	uvx label-studio
+
+label-studio-docker: ## run Label Studio in Docker (annotation UI on :8080)
 	# mounts ./mydata (DB) and ./myfiles (local files) into the container
 	docker run -it --rm -p 8080:8080 \
 	-v $(CURRENT_DIR)/mydata:/label-studio/data \

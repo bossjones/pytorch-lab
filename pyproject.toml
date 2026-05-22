@@ -56,8 +56,6 @@ target-version = "py312"
 extend-exclude = [
     ".claude",
     "tasks",
-    "label_pointer.py",
-    "preprocessing_data_loader.py",
     "*.ipynb",
 ]
 
