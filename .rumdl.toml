@@ -1,0 +1,9 @@
+# rumdl configuration — Markdown linting for this repo.
+# Referenced by .claude/rules/documentation.md.
+
+[MD013]
+# Saner line length than the 80-char default. Tables and code blocks are
+# exempt: data rows and command examples are allowed to run long.
+line-length = 120
+code-blocks = false
+tables = false

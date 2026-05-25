@@ -56,8 +56,6 @@ target-version = "py312"
 extend-exclude = [
     ".claude",
     "tasks",
-    "label_pointer.py",
-    "preprocessing_data_loader.py",
     "*.ipynb",
 ]
 
@@ -74,6 +72,10 @@ pythonVersion = "3.12"
 typeCheckingMode = "basic"
 reportMissingImports = false
 reportPrivateImportUsage = false  # torch re-exports (torch.tensor etc.)
+useLibraryCodeForTypes = true
+reportMissingTypeStubs = "none"
+reportUnusedImport = "warning"
+reportUnusedVariable = "warning"
 # going_modular is installed as a package via [tool.setuptools] package-dir
 # (going_modular -> going_modular/going_modular). Point pyright at the same
 # parent so `from going_modular import ...` resolves statically too.

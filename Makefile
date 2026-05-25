@@ -1,9 +1,10 @@
 .PHONY: setup lock sync env-works env-test test test-cov test-cov-html open-cov lint format typecheck check \
+	docstring-audit \
 	clean jupyter ipython \
 	data-doctor data-setup \
 	setup-dataset-scratch-env download-dataset unzip-dataset zip-dataset \
 	download-localization-dataset fetch-assets \
-	install-postgres label-studio \
+	install-postgres label-studio label-studio-local \
 	claude-telegram-channel \
 	help
 
@@ -49,6 +50,9 @@ typecheck: ## type-check with pyright
 	uv run pyright
 
 check: lint typecheck test ## run lint, typecheck, and tests
+
+docstring-audit: ## regenerate docs/coverage_docs/report.md (docstring coverage)
+	uv run contrib/docstring_coverage.py
 
 # --- Dev utilities ----------------------------------------------------------
 clean: ## remove build artifacts, caches, and coverage data
@@ -131,5 +135,14 @@ fetch-assets: ## download screencropnet dataset, checkpoints, and sample image
 install-postgres: ## install PostgreSQL 14 via Homebrew
 	brew install postgresql@14
 
-label-studio: ## launch Label Studio annotation tool
-	label-studio
+# Label Studio is installed as an isolated uv tool (`uv tool install
+# label-studio`): its pinned requests/pillow versions conflict with this
+# project's deps, so it cannot live in the project venv. `uvx` == `uv tool run`.
+label-studio: ## launch Label Studio annotation UI on http://localhost:8080
+	uvx label-studio
+
+label-studio-local: ## launch Label Studio serving scratch/datasets/ as local files
+	# LOCAL_FILES_* lets you import the on-disk screenshots without uploading them
+	LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true \
+	LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=$(CURDIR)/scratch/datasets \
+	uvx label-studio

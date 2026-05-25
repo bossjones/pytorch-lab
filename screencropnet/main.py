@@ -8,7 +8,6 @@ import platform
 import random
 import shutil
 import socket
-
 import sys
 import warnings
 import zipfile
@@ -19,19 +18,15 @@ from timeit import default_timer as timer
 from urllib.parse import urlparse
 
 import albumentations as A
-
-
 import better_exceptions
 import bpdb
 import cv2
 import matplotlib
-
 import matplotlib.pyplot as plt
 import mlxtend
 import numpy as np
 import pandas as pd
 import requests
-
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
@@ -64,7 +59,6 @@ from watermark import watermark
 
 from going_modular import engine, utils  # pylint: disable=no-name-in-module
 from screencropnet import devices
-
 from screencropnet.arch import ObjLocModel
 from screencropnet.data_set import ObjLocDataset
 from screencropnet.ml_types import ImageNdarrayBGR

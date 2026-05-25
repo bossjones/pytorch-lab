@@ -30,9 +30,16 @@ uv add <pkg>                 # add a runtime dependency
 uv add --dev <pkg>           # add a dev/test dependency
 make test                    # uv run pytest
 make check                   # ruff check + pyright + pytest
+make label-studio            # launch Label Studio annotation UI (uvx label-studio)
+make label-studio-local      # ...same, serving scratch/datasets/ as local files
 inv local.clean              # remove .pyc / __pycache__
 inv local.jupyter            # start Jupyter notebook
 ```
+
+Label Studio is **not** a project dependency — its pinned `requests`/`pillow`
+versions conflict with the project's, so it is installed as an isolated uv
+tool (`uv tool install label-studio`) and run via `uvx`. See
+`ai_docs/development/label-studio/`.
 
 ### screennet/ (image classification — twitter/facebook/tiktok)
 ```bash
@@ -132,6 +139,11 @@ uv run contrib/fetch_screencropnet_assets.py --weights --sample
 Asset URLs/destinations/layout are documented in
 `ai_docs/screencropnet-assets.md` (provenance recovered from the local-only
 `contrib/*.ipynb` reference notebooks, which are git-ignored).
+
+To **create** new bounding-box / classification labels, use Label Studio —
+`make label-studio` plus the workflow in `ai_docs/development/label-studio/`
+(annotate twitter screenshots, export Pascal VOC XML, convert to the
+screencropnet CSV with `screencropnet/pascal_to_csv.py`).
 
 ### Code style
 

@@ -523,10 +523,9 @@ for batches 2–4 of each epoch pair.
 
 All formatting, linting, and type checking are configured solely in the root
 `pyproject.toml` — subproject `Makefile`s delegate back to it. The ruff
-configuration excludes `tasks/`, `.claude/`, legacy notebooks, and two legacy
-root scripts (`label_pointer.py`, `preprocessing_data_loader.py`) from linting
-scope. This means those files may contain style violations; cleaning them is a
-tracked follow-up per `specs/post-migration-hardening.md`.
+configuration excludes `tasks/`, `.claude/`, and legacy notebooks from linting
+scope. The two former legacy root scripts now live under `contrib/` as proper
+PEP 723 `uv run` scripts and are fully linted, type-checked, and tested.
 
 ### Dependency Management
 
